@@ -19,6 +19,7 @@ extern "C" void invlpg(uint32_t va);
 extern "C" void apitHandler_(void);
 extern "C" void spuriousHandler_(void);
 extern "C" void pageFaultHandler_(void);
+extern "C" void keyboardHandler_(void);
 
 extern "C" void* memcpy(void *dest, const void* src, size_t n);
 extern "C" void* bzero(void *dest, size_t n);

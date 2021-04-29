@@ -165,7 +165,7 @@ void configInit(Config* config) {
         }
         else if (entryPtr->type == 1) {
             IOAPIC_ENTRY *apic = (IOAPIC_ENTRY*) entryPtr;
-            // Debug::printf("ID: %d, address: 0x%x, base: %d\n", apic->apicId, apic->address, apic->base);
+            //Debug::printf("ID: %d, address: 0x%x, base: %d\n", apic->apicId, apic->address, apic->base);
             config->ioAPIC = apic->address;
         }
     }

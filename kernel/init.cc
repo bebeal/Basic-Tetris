@@ -122,7 +122,6 @@ extern "C" void kernelInit(void) {
         Pit::calibrate(1000);
 
         SMP::running.fetch_add(1);
-        U8042 ps2Controller;
 
         // The reset EIP has to be
         //     - divisible by 4K (required by LAPIC)
@@ -136,6 +135,7 @@ extern "C" void kernelInit(void) {
             SMP::ipi(id, 0x4600 | (((uintptr_t)resetEIP) >> 12));
             while (SMP::running <= id);
         }
+        //ps2.fake_keyboard_input('a');
     } else {
         SMP::running.fetch_add(1);
         SMP::init(false);
@@ -154,6 +154,7 @@ extern "C" void kernelInit(void) {
 
     Debug::printf("| %d enabling interrupts, I'm scared\n",id);
     sti();
+    
 
     auto myOrder = howManyAreHere.add_fetch(1);
     if (myOrder == kConfig.totalProcs) {
