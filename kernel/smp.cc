@@ -38,7 +38,7 @@ void SMP::init(bool isFirst) {
     if (isFirst) {
         // Define APIC registers
         id = (uint32_t *) (kConfig.localAPIC + 0x20) ;
-        eoi_reg = (uint32_t *) (kConfig.localAPIC + 0xb0) ;
+        eoi_reg = (uint32_t *) (kConfig.localAPIC + 0xb0) ; // EOI register	write only
         spurious = (uint32_t *) (kConfig.localAPIC + 0xf0) ;
         icr_low = (uint32_t *) (kConfig.localAPIC + 0x300) ;
         icr_high = (uint32_t *) (kConfig.localAPIC + 0x310) ;

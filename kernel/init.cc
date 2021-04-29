@@ -16,6 +16,7 @@
 #include "stdint.h"
 #include "tss.h"
 #include "sys.h"
+#include "keyboard.h"
 
 struct Stack {
     static constexpr int BYTES = 4096;
@@ -121,6 +122,7 @@ extern "C" void kernelInit(void) {
         Pit::calibrate(1000);
 
         SMP::running.fetch_add(1);
+        U8042 ps2Controller;
 
         // The reset EIP has to be
         //     - divisible by 4K (required by LAPIC)

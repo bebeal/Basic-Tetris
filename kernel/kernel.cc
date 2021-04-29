@@ -16,11 +16,6 @@ namespace bebeal {
 }
 
 void kernelMain(void) {
-    auto argv = new const char* [2];
-    argv[0] = "init";
-    argv[1] = nullptr;
-    
-    int rc = SYS::exec(initName,1,argv);
-    Debug::panic("*** rc = %d",rc);
+    Debug::printf("Made it to kernel main!\n");
 }
 
