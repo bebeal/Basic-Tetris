@@ -9,7 +9,7 @@ U8042* keyboard::ps2C = 0;
 void keyboard::init(U8042* ps2C) {
     keyboard::ps2C = ps2C;
 
-    IDT::interrupt(U8042::APIT_keyboard_vector, (uint32_t)keyboardHandler_);
+    IDT::interrupt(U8042::KBVector, (uint32_t)keyboardHandler_);
 }
 
 extern "C" void keyboardHandler() {

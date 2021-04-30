@@ -92,10 +92,10 @@ namespace SB {
 class U8042 {
 public:
     bool dual;
-    constexpr static uint32_t APIT_keyboard_vector = 0x09; 
+    constexpr static uint32_t KBVector = 0x09; 
 
     U8042() {
-        Debug::printf("| Setting up U8042 PS/2 Port device/s\n");
+        Debug::printf("| Initializing U8042 PS/2 Port device/s\n");
 
         /*
         Disable Devices
