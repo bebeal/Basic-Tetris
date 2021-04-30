@@ -241,13 +241,11 @@ sysHandler_:
 
     .global keyboardHandler_
 keyboardHandler_:
-        // calling inb(port == 0x60) to read from IO port 0x60, no need to check bit 0 in Status register
-        pushl $0x60
-        call inb
-        add $4, %esp
-        // eax stores return from inb(port), calling keyboardHandler(char c)
-        push %eax
         .extern keyboardHandler
         call keyboardHandler
-        pop %eax
         iret
+
+.global fakekeyboardinterrupt
+fakekeyboardinterrupt:
+    int $9
+    iret

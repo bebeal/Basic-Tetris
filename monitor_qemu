@@ -1,6 +1,6 @@
 set -e
 
-UTCS_OPT=-O3 make clean the_kernel $1.data
+UTCS_OPT=-O0 make clean the_kernel $1.data
 
 echo "QEMU monitor enabled"
 echo "  ^c will not terminate QEMU"
@@ -8,6 +8,7 @@ echo "  use ^ax to exit"
 echo "  use ^ac to enter to QEMU monitor"
 
 time `make qemu_cmd` `make qemu_config_flags` \
+             -s -S \
              -no-reboot \
              -nographic \
              -drive file=kernel/build/kernel.img,index=0,media=disk,format=raw \

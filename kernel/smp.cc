@@ -52,13 +52,21 @@ void SMP::init(bool isFirst) {
 
     }
 
-    // disable PIC
+    // disable PIC (masking all interrupts on PIC/s)
     outb(0x21,0xff);
     outb(0xa1,0xff);
 
-    // Enable LAPIC
-    uint64_t msr = rdmsr(MSR);
-    wrmsr(MSR, msr | ENABLE);
+    // insert IOAPIC entry for IRQ1                 
+    RedirectionEntry f = getRedirectionEntry(0x12);
+    f.setVector(0x9);
+    f.setMask(0);
+    writeRedirectionEntry(0x12, f);
 
-    spurious.set(0x1ff);
+    // Enable LAPIC
+    uint64_t msr = rdmsr(MSR); // RDMSR: read model specific register
+    wrmsr(MSR, msr | ENABLE); // WRMSR: write model specific register, ENABLE == 1 << 11 == 0x800 i.e. IA32_APIC_BASE[11] the APIC Global Enable flag (https://xem.github.io/minix86/manual/intel-x86-and-64-manual-vol3/o_fe12b1e2a880e0ce-370.html)
+
+    spurious.set(0x1ff); // The correct value for this field is the IRQ number that you want to map the spurious interrupts to within the lowest 8 bits, and the 8th bit set, easiest is to use 0xFF
+
+
 }

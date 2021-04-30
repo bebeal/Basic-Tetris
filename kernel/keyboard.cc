@@ -3,23 +3,20 @@
 #include "machine.h"
 #include "smp.h"
 
-char U8042::get() {
-    char x = inb(PS2::DATA_PORT); 
-    return x;
-}
-
-void U8042::put(char c) {
-    outb(PS2::DATA_PORT,c);
-}
+U8042* keyboard::ps2C = 0;
 
 // register interrupt vector mapping to handler
-void U8042::init() {
+void keyboard::init(U8042* ps2C) {
+    keyboard::ps2C = ps2C;
+
     IDT::interrupt(U8042::APIT_keyboard_vector, (uint32_t)keyboardHandler_);
 }
 
-extern "C" void keyboardHandler(char c) {
+extern "C" void keyboardHandler() {
+    // read from data port
+    char c = inb(0x60);
     // send EOI to the interrupt controller to acknowledge we recieved the interrupt
-    SMP::eoi_reg.set(0);
+    //SMP::eoi_reg.set(0);
+    outb(0x20, 0x20);
     Debug::printf("in keyboardHandler, char: %c\n", c);
 }
-

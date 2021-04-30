@@ -9,6 +9,7 @@ extern "C" int inb(int port);
 extern "C" int inl(int port);
 extern "C" void outb(int port, int val);
 extern "C" void outl(int port, int val);
+extern "C" void fakekeyboardinterrupt(void);
 
 extern "C" uint64_t rdmsr(uint32_t id);
 extern "C" void wrmsr(uint32_t id, uint64_t value);

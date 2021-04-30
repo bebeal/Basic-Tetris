@@ -172,3 +172,50 @@ void configInit(Config* config) {
 
     config->totalProcs = config->nOtherProcs + 1;
 }
+
+
+uint32_t Config::readIOApic(uint32_t reg) {
+   uint32_t volatile *ioapic = (uint32_t volatile *)kConfig.ioAPIC;
+   ioapic[0] = (reg & 0xff); // set IOREGSEL using bottom 8 bits for register select
+   return ioapic[4]; // fetch from IOREGWIN
+}
+
+void Config::writeIOApic(uint32_t reg, uint32_t value) {
+   uint32_t volatile *ioapic = (uint32_t volatile *)kConfig.ioAPIC;
+   ioapic[0] = (reg & 0xff); // set IOREGSEL using bottom 8 bits for register select
+   ioapic[4] = value; // set IOREGWIN
+}
+
+
+RedirectionEntry getRedirectionEntry(uint32_t reg) {
+    RedirectionEntry re;
+    re.lower = Config::readIOApic(reg);
+    re.upper = Config::readIOApic(reg + 1);
+    return re;
+}
+
+void writeRedirectionEntry(uint32_t reg, RedirectionEntry newRE) {
+    Config::writeIOApic(reg, newRE.lower);
+    Config::writeIOApic(reg + 1, newRE.upper);
+}
+
+void RedirectionEntry::print() {
+    Debug::printf("Vector: 0x%x\n", vector());
+    Debug::printf("Delivery Mode: 0x%x\n", delvMode());
+    Debug::printf("Destination Mode: 0x%x\n", destMode());
+    Debug::printf("Pin Polarity: 0x%x\n", pinPolarity());
+    Debug::printf("Remote IRR: 0x%x\n", remoteIRR());
+    Debug::printf("Trigger Mode: 0x%x\n", triggerMode());
+    Debug::printf("Mask: 0x%x\n", mask());
+    Debug::printf("Destination: 0x%x\n", destination());
+}
+
+void Config::printIOAPICEntires() {
+    uint32_t max = (Config::readIOApic(0x1) >> 16) & 0xFF;
+    for(uint32_t current = 0; current < max; current += 2) {
+        RedirectionEntry re = getRedirectionEntry(current + 0x10);
+        Debug::printf("\nCurrent Entry: 0x%x 0x%x\n", current + 0x10, current + 0x11);
+        re.print();
+    }
+    Debug::printf("\n");
+}
