@@ -90,7 +90,6 @@ extern "C" void kernelInit(void) {
             kConfig.memSize / (1024 * 1024));
         Debug::printf("| localAPIC %x\n",kConfig.localAPIC);
         Debug::printf("| ioAPIC %x\n",kConfig.ioAPIC);
-        Config::printIOAPICEntires();
 
         /* initialize the heap */
         heapInit((void*)HEAP_START,HEAP_SIZE);
@@ -118,7 +117,7 @@ extern "C" void kernelInit(void) {
         SMP::init(true);
         smpInitDone = true;
        
-        keyboard::init(new U8042());        
+        keyboard::init(new U8042());
   
         /* initialize IDT */
         IDT::init();
@@ -156,6 +155,7 @@ extern "C" void kernelInit(void) {
 
     Debug::printf("| %d enabling interrupts, I'm scared\n",id);
     sti();
+    openIRQ(1);
     
 
     auto myOrder = howManyAreHere.add_fetch(1);

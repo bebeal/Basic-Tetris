@@ -199,6 +199,22 @@ void writeRedirectionEntry(uint32_t reg, RedirectionEntry newRE) {
     Config::writeIOApic(reg + 1, newRE.upper);
 }
 
+void openIRQ(uint32_t irq) {
+    // the Redirection Entry register for IRQ n 0x10 + n * 2. (+ 1) for upper 32 bit values
+    uint32_t reg = 0x10 + (irq * 2);
+    RedirectionEntry re = getRedirectionEntry(reg);
+    re.setMask(0);
+    writeRedirectionEntry(reg, re);
+}
+
+void closeIRQ(uint32_t irq) {
+    // the Redirection Entry register for IRQ n 0x10 + n * 2. (+ 1) for upper 32 bit values
+    uint32_t reg = 0x10 + (irq * 2);
+    RedirectionEntry re = getRedirectionEntry(reg);
+    re.setMask(1);
+    writeRedirectionEntry(reg, re);
+}
+
 void RedirectionEntry::print() {
     Debug::printf("Vector: 0x%x\n", vector());
     Debug::printf("Delivery Mode: 0x%x\n", delvMode());

@@ -59,7 +59,7 @@ void SMP::init(bool isFirst) {
     // insert IOAPIC entry for IRQ1                 
     RedirectionEntry f = getRedirectionEntry(0x12);
     f.setVector(0x9);
-    f.setMask(0);
+    f.setMask(1);
     writeRedirectionEntry(0x12, f);
 
     // Enable LAPIC

@@ -95,5 +95,7 @@ extern void configInit(Config* config);
 
 RedirectionEntry getRedirectionEntry(uint32_t reg);
 void writeRedirectionEntry(uint32_t reg, RedirectionEntry newRE);
+void openIRQ(uint32_t irq);
+void closeIRQ(uint32_t irq);
 
 #endif

@@ -16,7 +16,6 @@ extern "C" void keyboardHandler() {
     // read from data port
     char c = inb(0x60);
     // send EOI to the interrupt controller to acknowledge we recieved the interrupt
-    //SMP::eoi_reg.set(0);
-    outb(0x20, 0x20);
+    SMP::eoi_reg.set(0);
     Debug::printf("in keyboardHandler, char: %c\n", c);
 }
