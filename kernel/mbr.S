@@ -26,6 +26,8 @@ start:
 
     # print an 'x' to let the world know we're here
     call onex
+    call switchVideoModes
+    #call getVideoMode
 
     # read the drive parameters
     movw $30,0x6000
@@ -86,6 +88,22 @@ onex:
     movb $'x',%al
     movb $1,%ah
     mov $0,%dx
+    int $0x14
+    popa
+    ret
+switchVideoModes:
+    pusha
+    movb $0x00, %ah 
+    movb $0x13, %al
+    int $0x10
+    popa
+    ret
+getVideoMode:
+    pusha
+    movb 0x0F, %ah
+    int $0x10
+    movb $1, %ah
+    mov $0, %dx
     int $0x14
     popa
     ret

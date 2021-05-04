@@ -20,20 +20,6 @@ namespace bebeal {
 
 void kernelMain(void) {
     // emulates a keyboard interrupt
-    while((inb(PS2::STAT_COMM_PORT) & 0x2)); // poll_write() 
-    outb(PS2::STAT_COMM_PORT, 0xD2);
-    while((inb(PS2::STAT_COMM_PORT) & 0x2)); // poll_write()
-    outb(PS2::DATA_PORT, 'a');
-    // emulate  a b
-    while((inb(PS2::STAT_COMM_PORT) & 0x2));
-    outb(PS2::STAT_COMM_PORT, 0xD2);
-    while((inb(PS2::STAT_COMM_PORT) & 0x2));
-    outb(PS2::DATA_PORT, 'b');
-    // emulate a c
-    while((inb(PS2::STAT_COMM_PORT) & 0x2));
-    outb(PS2::STAT_COMM_PORT, 0xD2);
-    while((inb(PS2::STAT_COMM_PORT) & 0x2));
-    outb(PS2::DATA_PORT, 'c');
     Debug::printf("Made it to kernel main!\n");
 
     while(true);

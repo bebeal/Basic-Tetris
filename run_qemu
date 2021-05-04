@@ -4,8 +4,11 @@ UTCS_OPT=-O3 make clean the_kernel $1.data
 
 time `make qemu_cmd` `make qemu_config_flags` \
              -no-reboot \
-             -nographic \
-             --monitor none \
+             -vga std \
+             -display gtk \
+             -serial file:out.txt \
+             -boot menu=on,splash=imgs/goat.jpeg,splash-time=5000 \
              -drive file=kernel/build/kernel.img,index=0,media=disk,format=raw \
              -drive file=$1.data,index=1,media=disk,format=raw \
              -device isa-debug-exit,iobase=0xf4,iosize=0x04 || true
+

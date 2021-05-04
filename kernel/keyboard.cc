@@ -14,8 +14,8 @@ void keyboard::init(U8042* ps2C) {
 
 extern "C" void keyboardHandler() {
     // read from data port
-    char c = inb(0x60);
+    unsigned char c = inb(0x60);
     // send EOI to the interrupt controller to acknowledge we recieved the interrupt
     SMP::eoi_reg.set(0);
-    Debug::printf("in keyboardHandler, char: %c\n", c);
+    Debug::printf("in keyboardHandler, char: %c, as hex: 0x%x\n", c, c);
 }

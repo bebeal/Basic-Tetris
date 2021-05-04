@@ -11,7 +11,7 @@ The PS/2 Keyboard is a device that talks to a PS/2 controller (Intel 8042; AIP) 
 
 <strong>Hardware Overview: </strong>
 
-<img src="img/Ps2-kbc.png" alt="Ps2-kbc">
+<img src="imgs/Ps2-kbc.png" alt="Ps2-kbc">
 
 ##### Dual Channel PS/2 Controllers
 Dual Channels PS/2 Controllers (like the one displayed above) support PS/2 style mice along with PS/2 keyboards. The first PS/2 connector (typically the keyboard) connects to PIC1 (Master PIC) thorugh IRQ1. The Second PS/2 Controller (typically the mouse) talks to PIC2 (Slave PIC) through IRQ12, which cascades to PIC1 through IRQ2.
@@ -213,6 +213,148 @@ Sources and References:
 
 
 ## Writing to VGA Memory
+For standard VGA video modes the video memory will be at address `0xA0000` for EGA/VGA video modes and `0xB8000` for CGA and text modes. Some basic video modes and their specs are defined below.
+|Mode Number|Mode |WxHxD|
+|--|--|--|
+|00|	text |40$\times$25$\times$16$\times$2 (B/W text)|
+|01|	text |40$\times$25$\times$16 |
+|02|	text |80$\times$25$\times$16 (Gray text)|
+|03|	text |80$\times$25$\times$16 |
+|04|	CGA |320$\times$200$\times$4 |
+|05|	CGA |320$\times$200$\times$4|
+|06|	CGA |640$\times$200$\times$2 |
+|07|	MDA monochrome text |80$\times$25 Monochrome text|
+|08|	PCjr|160$\times$200$\times$16|
+|09|	PCjr|320$\times$200$\times$16|
+|0A|	PCjr|640$\times$200$\times$16|
+|0B|	reserved||
+|0C|	reserved||
+|0D|	EGA |320$\times$200$\times$16 |
+|0E|	EGA |640$\times$200$\times$16 |
+|0F|	EGA |640$\times$350 Monochrome graphics|
+|10|	EGA |640$\times$350$\times$16 |
+|11|	VGA |640$\times$480$\times$2|
+|12|	VGA |640$\times$480$\times$16 |
+|13|	VGA |320$\times$200$\times$256 |
 
+We wish to 
+
+
+### Switching Video Modes
+To switch video modes we will use a BIOS interrupt (`int 0x10`) with 0 in the `%ah` regiser and with the desired video mode number in the `%al` register. 
+#### Bootloader Code
+We can only use BIOS Interrupts in a 16-bit environment which limits us to being in Real Mode or Virtual 8086 Mode. We opt for the former as the latter requires some other special conditions. Thus in the bootloader before we switch to protected mode we insert this code to enter into Video Mode 13 (320$\times$200$\times$256):
+```asm
+movb $0x00, %ah 
+movb $0x13, %al
+int $0x10
+```
+#### Writing to VGA Memory
+Now that were in the correct video mode, we can simply write to VGA Memory, which for our Mode is located at `0xA000`, to display colors on the screen. The color displayed depends on the byte value written to memory. The first 16 VGA colors:
+<div class="table">
+    <table>
+      <tbody><tr>
+          <th>Value</th>
+          <th>Color</th>
+      </tr>
+      <tr>
+          <td>0</td>
+          <td style="background: #000000 !important; color: #ffffff !important;">Black</td>
+      </tr>
+      <tr>
+          <td>1</td>
+          <td style="background: #000080 !important; color: #ffffff !important;">Blue</td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td style="background: #008000 !important; color: #ffffff !important;">Green</td>
+      </tr>
+      <tr>
+          <td>3</td>
+          <td style="background: #008080 !important; color: #ffffff !important;">Cyan</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td style="background: #800000 !important; color: #ffffff !important;">Red</td>
+      </tr>
+      <tr>
+          <td>5</td>
+          <td style="background: #800080 !important; color: #ffffff !important;">Magenta</td>
+      </tr>
+      <tr>
+          <td>6</td>
+          <td style="background: #808000 !important; color: #ffffff !important;">Brown</td>
+      </tr>
+      <tr>
+          <td>7</td>
+          <td style="background: #C0C0C0 !important; color: #000000 !important;">Light Gray</td>
+      </tr>
+      <tr>
+          <td>8</td>
+          <td style="background: #808080 !important; color: #ffffff !important;">Dark Gray</td>
+      </tr>
+      <tr>
+          <td>9</td>
+          <td style="background: #0000FF !important; color: #ffffff !important;">Light Blue</td>
+      </tr>
+      <tr>
+          <td>10</td>
+          <td style="background: #00FF00 !important; color: #000000 !important;">Light Green</td>
+      </tr>
+      <tr>
+          <td>11</td>
+          <td style="background: #00FFFF; color: #000000; !important">Light Cyan</td>
+      </tr>
+      <tr>
+          <td>12</td>
+          <td style="background: #FF0000; color: #000000; !important">Light Red</td>
+      </tr>
+      <tr>
+          <td>13</td>
+          <td style="background: #FF00FF; color: #000000; !important">Light Magenta</td>
+      </tr>
+      <tr>
+          <td>14</td>
+          <td style="background: #ffff00; color: #000000; !important">Yellow</td>
+      </tr>
+      <tr>
+          <td>15</td>
+          <td style="background: #ffffff; color: #000000; !important">White</td>
+      </tr>
+    </tbody></table>
+  </div>
+
+#### Plotting Pixels
+
+The screen is 320 pixels in width and 200 pixels in height. This is mapped 0 to 319 on the x axis and 0 to 199 on the y axis, with the origin (0,0) at the top-left corner. Since this is a 256-color mode, each pixel represents 8 bits or one byte, so the memory needed is 320$\times$200 or 64,000 bytes. Since memory i slinear, the offset into computer memory must be calculated to plot a pixel. To do this the y value is multiplied by the width of the screen, or 320, and the x value is added to that:
+```
+uint32_t offset(uint32_t x, uint32_t y) {
+    return x + (y << 8) + (y << 6);
+}
+```
+
+#### Optimizations
+Some optimizations should be done to make writing to VGA memory more practical.
+
+##### Shifting
+A way to further speed up pixel plotting is to use shifting instead of multiplication when calculating the offset. 
+
+##### Double Buffering
+Double Buffering is a fairly simple concept to grasp. Instead of drawing directly to video memory, the program draws everything to a double buffer (Figure 20a). When finished, the program copies the double buffer to video memory all at once (Figure 20b). At that point the program clears the double buffer (if necessary) and the process starts over:
+
+<dl class="image">
+    <dt>
+      <img src="imgs/db1.gif" alt="Double buffering concept." width="275" height="360">
+    </dt>
+    <dd>
+    </dd>
+  </dl>
+
+Sources and References:
+* https://wiki.osdev.org/Drawing_In_Protected_Mode
+* http://web.archive.org/web/20140218012818/http://atschool.eduweb.co.uk/camdean/pupils/amac/vga.htm#7, http://www.brackeen.com/vga/basics.html
+* 
 
 ## Tetris
+
+-object input-linux,id=kbd1,evdev=/dev/input/by-id/usb-Razer_Razer_BlackWidow_Chroma-event-kbd,grab_all=on,repeat=on \

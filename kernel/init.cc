@@ -17,6 +17,7 @@
 #include "tss.h"
 #include "sys.h"
 #include "keyboard.h"
+#include "graphics.h"
 
 struct Stack {
     static constexpr int BYTES = 4096;
@@ -156,7 +157,9 @@ extern "C" void kernelInit(void) {
     Debug::printf("| %d enabling interrupts, I'm scared\n",id);
     sti();
     openIRQ(1);
-    
+    if (SMP::me() == 0) {
+        clear_screen();
+    }
 
     auto myOrder = howManyAreHere.add_fetch(1);
     if (myOrder == kConfig.totalProcs) {
