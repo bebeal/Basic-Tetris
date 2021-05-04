@@ -116,7 +116,7 @@ public:
         send_command(0x20, 0, &response);
         // enabled interrupts for usable PS/2 ports
         D Debug::printf("| U8042: Changing Config; Old Config: 0x%x\n", response);
-        response = (response | 0x41); // bit 0 for first PS/2 port interrupt, bit 6 for PS/2 port translation
+        response = (response | 0x01); // bit 0 for first PS/2 port interrupt, bit 6 for PS/2 port translation
         if (dual) {
             response = (response | 0x2); // bit 1 for second PS/2 port interrupt
         }

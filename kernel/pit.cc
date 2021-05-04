@@ -146,3 +146,12 @@ extern "C" void apitHandler(uint32_t* things) {
     if ((me == nullptr) || (me->isIdle) || (me->saveArea.no_preempt)) return;
     yield();
 }
+
+void sleep(int n) {
+    volatile uint32_t end = Pit::jiffies + Pit::secondsToJiffies(n);
+    monitor(Pit::jiffies);
+    while(Pit::jiffies != end) {
+        iAmStuckInALoop(true);
+        monitor(Pit::jiffies);
+    }
+}

@@ -9,6 +9,9 @@
 #include "sys.h"
 #include "keyboard.h"
 #include "machine.h"
+#include "graphics.h"
+#include "tetris.h"
+#include "pit.h"
 
 const char* initName = "/sbin/init";
 
@@ -22,6 +25,36 @@ void kernelMain(void) {
     // emulates a keyboard interrupt
     Debug::printf("Made it to kernel main!\n");
 
+    IShape i = IShape(25, 25, (Color) 11);
+    sleep(1);
+    i.move_down();
+    sleep(1);
+    i.move_down();
+    sleep(1);
+    i.move_right();
+    sleep(1);
+    i.move_right();
+    sleep(1);
+    i.move_left();
+    sleep(1);
+    i.move_left();
+    sleep(1);
+    i.rotate();
+    sleep(1);
+    i.move_down();
+    sleep(1);
+    i.move_right();
+    sleep(1);
+    i.move_left();
+    sleep(1);
+    i.rotate();
+    sleep(1);
+    i.move_down();
+    sleep(1);
+    i.move_right();
+    sleep(1);
+    i.move_left();
+    sleep(1);
     while(true);
 }
 

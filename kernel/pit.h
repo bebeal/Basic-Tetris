@@ -25,4 +25,6 @@ public:
 
 };
 
+void sleep(int n);
+
 #endif

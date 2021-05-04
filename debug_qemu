@@ -11,8 +11,12 @@ echo "   continue"
 time `make qemu_cmd` `make qemu_config_flags` \
              -s -S \
              -no-reboot \
-             -nographic \
-             --monitor none \
+             -vga std \
+             -display gtk \
+             -serial file:out/out.txt \
+             -chardev pipe,path=out/seabiosdebug.txt,id=seabios \
+             -device isa-debugcon,iobase=0x402,chardev=seabios \
+             -boot menu=on,splash=imgs/resized-image-Promo.jpeg,splash-time=5000 \
              -drive file=kernel/build/kernel.img,index=0,media=disk,format=raw \
              -drive file=$1.data,index=1,media=disk,format=raw \
              -device isa-debug-exit,iobase=0xf4,iosize=0x04 || true
