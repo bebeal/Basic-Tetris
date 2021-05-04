@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include "stdint.h"
 #include "debug.h"
+
 // reference: http://www.brackeen.com/vga/basics.html
 
 uint8_t* VGA = (uint8_t*)0xA0000;
@@ -36,7 +37,7 @@ void plot(uint32_t x, uint32_t y, Color color, bool write_to_buffer) {
 void clear_screen() {
     Debug::printf("*** Clearing Screen\n");
     for(uint32_t i = 0; i < 320 * 200; i++) {
-        *VGA = Black;
+        VGA[i] = i % NUM_COLORS;
     }
 }
                                                      

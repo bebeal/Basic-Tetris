@@ -28,7 +28,9 @@ enum Color : uint8_t{
 extern uint8_t* VGAMEM;
 extern uint8_t* double_buffer;
 static constexpr uint32_t NUM_COLORS = 256;
+
 uint8_t offset(uint8_t x, uint8_t y); 
+void plot(uint32_t x, uint32_t y, Color color, bool write_to_buffer);
 void clear_screen(); 
 
 void write_string( int colour, const char *string );
