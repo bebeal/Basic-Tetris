@@ -89,7 +89,12 @@ void Keyboard::handle_interrupt() {
     if(ascii != 0) {
         kb_queue[head] = ascii;
         head = nhead;
-        put_char(ascii, 1, 1);
+        if (caps) {
+            put_string("CAPSLOCK", 3, 2);
+        } else {
+            put_string("        ", 3, 2);
+        }
+        put_char(ascii, 3, 3);
         //Debug::printf("0x%x %c\n", byte, ascii);
         return;
     }

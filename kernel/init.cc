@@ -129,6 +129,7 @@ extern "C" void kernelInit(void) {
         SMP::running.fetch_add(1);
         clear_screen();
         psf_init();
+        put_string("What just happened?\nWhy am I here?" , 0, 0);
 
         // The reset EIP has to be
         //     - divisible by 4K (required by LAPIC)

@@ -31,6 +31,8 @@ void psf_init();
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg);
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg);
 void put_char(uint16_t index, uint32_t cx, uint32_t cy);
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg);
+void put_string(const char* str, uint32_t cx, uint32_t cy);
 unsigned char* offset(uint16_t index);
 
 void ex();

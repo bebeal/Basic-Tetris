@@ -103,21 +103,49 @@ void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg) {
     put_char(index, cx, cy, fg, false);
 }
 
-
 void put_char(uint16_t index, uint32_t cx, uint32_t cy) {
     put_char(index, cx, cy, White, Black, false);
 }
 
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg) {
+    uint32_t cx_offset = cx;
+    while(*str != 0) {
+        if (*str == '\n') {
+            cy++;
+            cx_offset = cx;
+            str++;
+        } else {
+            put_char(*str++, cx_offset++, cy, fg, bg);
+        }
+    }
+}
+
+void put_string(const char* str, uint32_t cx, uint32_t cy) {
+    uint32_t cx_offset = cx;
+    while(*str != 0) {
+        if (*str == '\n') {
+            cy++;
+            cx_offset = cx;
+            str++;
+        } else {
+            put_char(*str++, cx_offset++, cy);
+        }
+    }
+}
+
 void ex() {
-    put_char('H', 14, 4);
-    put_char('E', 15, 4);
-    put_char('L', 16, 4);
-    put_char('L', 17, 4);
-    put_char('O', 18, 4);
+    put_char('H', 14, 4, Green, Black);
+    put_char('E', 15, 4, Red, Black);
+    put_char('L', 16, 4, Blue, Black);
+    put_char('L', 17, 4, Yellow, Black);
+    put_char('O', 18, 4, Cyan, Black);
     put_char(' ', 19, 4);
-    put_char('W', 20, 4);
-    put_char('O', 21, 4);
-    put_char('R', 22, 4);
-    put_char('L', 23, 4);
-    put_char('D', 24, 4);
+    put_char('W', 20, 4, Brown, Black);
+    put_char('O', 21, 4, Magenta, Black);
+    put_char('R', 22, 4, LightGreen);
+    put_char('L', 23, 4, LightRed);
+    put_char('D', 24, 4, LightCyan);
+    const char* s = new char[12];
+    s = "hello world";
+    put_string(s , 14, 5);
 }
