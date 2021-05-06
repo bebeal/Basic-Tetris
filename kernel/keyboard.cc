@@ -33,11 +33,8 @@ uint8_t Keyboard::get_ascii() {
 }
 
 void Keyboard::handle_interrupt() {
-    // See if there's room in the key buffer, else bug out.
+    // overwrite if at tail
     uint8_t nhead = (head + 1) % BUFF_LEN;
-    if (nhead == tail) {
-        return;
-    }
 
     unsigned char byte = inb(0x60);
 
@@ -46,12 +43,15 @@ void Keyboard::handle_interrupt() {
         uint8_t pressed_byte = byte & 0x7F;
         // Check if we're releasing a shift key.
         if(pressed_byte == LSHIFT) {
+            put_string("        ", 3, 3);
             //Debug::printf("lshift u\n");
             shift = shift & 0x02;
         } else if(pressed_byte == RSHIFT) { 
+            put_string("        ", 3, 3);
             //Debug::printf("rshift u\n");
             shift = shift & 0x01;
         } else if(pressed_byte == CTRL) {
+            put_string("      ", 3, 3);
             //Debug::printf("ctrl u\n");
             ctrl = 0;
         }
@@ -65,18 +65,23 @@ void Keyboard::handle_interrupt() {
         return;
     }
     keys[byte]++;
-
+    
+    bool changed = caps;
     if(byte == LSHIFT) {
+        put_string("LSHIFT +", 3, 3);
         shift = shift | 0x01;
         //Debug::printf("lshift\n");
     } else if(byte == RSHIFT) {
+        put_string("RSHIFT +", 3, 3);
         shift = shift | 0x02;
         //Debug::printf("rshift\n");
     } else if(byte == CTRL) {
+        put_string("CTRL +", 3, 3);
         ctrl = 1;
         //Debug::printf("ctrl\n");
     } else if (byte == CAPS) {
         caps = !caps;
+        //Debug::printf("caps\n");
     }
 
     const uint8_t *codes  = lower_ascii_codes;
@@ -84,17 +89,21 @@ void Keyboard::handle_interrupt() {
         codes = upper_ascii_codes;
     }
 
-    uint8_t ascii = codes[byte];
-    
-    if(ascii != 0) {
-        kb_queue[head] = ascii;
-        head = nhead;
+    //Debug::printf("caps != change: %d != %d == %d\n", caps, changed, caps != changed);
+    if (caps != changed) {
         if (caps) {
             put_string("CAPSLOCK", 3, 2);
         } else {
             put_string("        ", 3, 2);
         }
-        put_char(ascii, 3, 3);
+    }
+
+    uint8_t ascii = codes[byte];
+    
+    if(ascii != 0) {
+        kb_queue[head] = ascii;
+        head = nhead;
+        put_char(ascii, 3, 4);
         //Debug::printf("0x%x %c\n", byte, ascii);
         return;
     }
