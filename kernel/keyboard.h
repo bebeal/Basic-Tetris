@@ -242,11 +242,9 @@ class Keyboard {
     static uint8_t tail;
     static uint8_t keys[256];
     static uint8_t kb_queue[BUFF_LEN];
-    //static uint8_t
 public:
     static void init(PS2Controller* ps2C);
-    static uint8_t get_key();
-    static uint8_t get_ascii(uint8_t key);
+    static uint8_t get_ascii();
     static void handle_interrupt();
 };
 

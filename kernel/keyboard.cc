@@ -5,6 +5,8 @@
 #include "machine.h"
 #include "smp.h"
 #include "scancode.h"
+#include "graphics.h"
+#include "fonts.h"
 
 PS2Controller* Keyboard::ps2C = 0;
 uint8_t Keyboard::head = 0;
@@ -21,12 +23,10 @@ void Keyboard::init(PS2Controller* ps2C) {
     IDT::interrupt(PS2Controller::KBVector, (uint32_t)keyboardHandler_);
 }
 
-uint8_t Keyboard::get_key() {
-    return 0;
-}
-
-uint8_t Keyboard::get_ascii(uint8_t key) {
-    return 0;
+uint8_t Keyboard::get_ascii() {
+    uint8_t get = tail;
+    tail = (tail + 1) % BUFF_LEN;
+    return kb_queue[get];
 }
 
 void Keyboard::handle_interrupt() {
@@ -78,14 +78,13 @@ void Keyboard::handle_interrupt() {
     if(ascii != 0) {
         kb_queue[head] = ascii;
         head = nhead;
+        put_char(ascii, 0, 0);
         return;
     }
 }
 
 extern "C" void keyboardHandler() {
-    // read from data port
-    unsigned char c = inb(0x60);
+    Keyboard::handle_interrupt();
     // send EOI to the interrupt controller to acknowledge we recieved the interrupt
     SMP::eoi_reg.set(0);
-    Debug::printf("keypressed as hex: 0x%x\n", c);
 }
