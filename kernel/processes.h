@@ -196,8 +196,6 @@ namespace gheith {
     private:
         // meta info
         uint32_t pid;
-        uint32_t uid; // unused for now
-        uint32_t gid; // unused for now
         // Processes thread/s
         TCB* thread;
         // files, child processes and semaphores kept in descriptor table dt
@@ -211,7 +209,7 @@ namespace gheith {
         Atomic<uint32_t> ref_count;
 
         // dti_f = 3 cause we start out w stdin, stdout, stderror
-        PCB(uint32_t pid, uint32_t uid, uint32_t gid, TCB* thread) : pid(pid), uid(uid), gid(gid), thread(thread), dt(new Descriptor*[NUM_DESCRIPTORS * NUM_DESCRIPTOR_TYPES]), count(new uint32_t[NUM_DESCRIPTOR_TYPES]), status(Shared<Future<int>>::make()), ref_count(0) {
+        PCB(uint32_t pid, TCB* thread) : pid(pid), thread(thread), dt(new Descriptor*[NUM_DESCRIPTORS * NUM_DESCRIPTOR_TYPES]), count(new uint32_t[NUM_DESCRIPTOR_TYPES]), status(Shared<Future<int>>::make()), ref_count(0) {
             // set spots for stdin, stdout, stderror
             add_descriptor(new FileDescriptor());
             add_descriptor(new FileDescriptor());
@@ -220,8 +218,6 @@ namespace gheith {
                 dt[dti] = new Descriptor();
             }
         }
-
-        PCB(uint32_t pid, TCB* thread) : PCB(pid, 0, 0, thread) {}
 
         PCB() : PCB(0, nullptr) {}
 

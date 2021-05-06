@@ -1,7 +1,7 @@
 #include "graphics.h"
-
 #include "debug.h"
 #include "stdint.h"
+
 
 // reference: http://www.brackeen.com/vga/basics.html
 
@@ -103,11 +103,6 @@ void polygon(int num_vertices, int *vertices, Color color, bool write_to_buffer)
     }
     draw_line(vertices[0], vertices[1], vertices[(num_vertices << 1) - 2], vertices[(num_vertices << 1) - 1], color, write_to_buffer);
 }
-
-// need a shape class for tetris shapes
-// store location of "origin" of shape on screen, using top left as origin just as screen does
-// functions to draw diff tetris shapes at diff locations on screen
-// functions to shift tetris shapes left, down, right without having to redraw the entire shape
 
 // For use in text mode
 void write_string(int colour, const char *string) {

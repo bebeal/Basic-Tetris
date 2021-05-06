@@ -71,7 +71,7 @@ class IShape : public Shape {
    public:
 
     IShape(uint32_t x, uint32_t y, Color color) : Shape('I', 0, 4, x, y, color) {
-        Debug::printf("shape initialized at : %d, %d\n", x, y);
+        //Debug::printf("shape initialized at : %d, %d\n", x, y);
         uint32_t y_start = y;
         for (uint32_t block = 0; block < num_blocks; block++) {
             draw_block(x, y_start);
@@ -120,19 +120,19 @@ class IShape : public Shape {
      *                   .
      */
     void move_down() {
-        Debug::printf("moving down current pos : %d, %d\n", x, y);
+        //Debug::printf("moving down current pos : %d, %d\n", x, y);
         if (orientation == 0 || orientation == 2) {
             extend_bottom();
         } else {
             for (uint32_t block = 0; block < num_blocks; block++) {
-                Debug::printf("x, y, x + BLOCK_SIZE * num_blocks - 1, y: %d %d %d %d\n",x, y, x + BLOCK_SIZE * num_blocks - 1, y);
-                Debug::printf("x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE: %d %d %d %d\n",x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE);
+                //Debug::printf("x, y, x + BLOCK_SIZE * num_blocks - 1, y: %d %d %d %d\n",x, y, x + BLOCK_SIZE * num_blocks - 1, y);
+                //Debug::printf("x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE: %d %d %d %d\n",x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE);
                 draw_line(x, y, x + BLOCK_SIZE * num_blocks, y, Black, draw_to_buffer);
                 draw_line(x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks, y + BLOCK_SIZE, color, draw_to_buffer);
                 y++;
             }
         }
-        Debug::printf("new pos : %d, %d\n", x, y);
+       // Debug::printf("new pos : %d, %d\n", x, y);
     }
 
     /*
@@ -143,7 +143,7 @@ class IShape : public Shape {
      *                   
      */
     void move_right() {
-        Debug::printf("moving right current pos : %d, %d\n", x, y);
+        //Debug::printf("moving right current pos : %d, %d\n", x, y);
         if (orientation == 0 || orientation == 2) {
             for (uint32_t block = 0; block < num_blocks; block++) {
                 draw_line(x, y, x, y + BLOCK_SIZE * num_blocks - 1, Black, draw_to_buffer);
@@ -153,7 +153,7 @@ class IShape : public Shape {
         } else {
             extend_right();
         }
-        Debug::printf("new pos : %d, %d\n", x, y);
+        //Debug::printf("new pos : %d, %d\n", x, y);
     }
 
     /*
@@ -164,7 +164,7 @@ class IShape : public Shape {
      *                   
      */
     void move_left() {
-        Debug::printf("moving left current pos : %d, %d\n", x, y);
+        //Debug::printf("moving left current pos : %d, %d\n", x, y);
         if (orientation == 0 || orientation == 2) {
             x -= BLOCK_SIZE;
             uint32_t start_x = x;
@@ -176,11 +176,11 @@ class IShape : public Shape {
         } else {
             extend_left();
         }
-        Debug::printf("new pos : %d, %d\n", x, y);
+       // Debug::printf("new pos : %d, %d\n", x, y);
     }
 
     void rotate() {
-        Debug::printf("rotating current pos, orientation : %d, %d %d\n", x, y, orientation);
+       // Debug::printf("rotating current pos, orientation : %d, %d %d\n", x, y, orientation);
         if (orientation == 0 || orientation == 2) {
             for(uint32_t block = 0; block < num_blocks; block++) {
                 clear_block(x, y);
@@ -207,7 +207,7 @@ class IShape : public Shape {
             y += BLOCK_SIZE;
         }
         orientation = (orientation + 1) % NUM_ORIENTATIONS;
-        Debug::printf("after rotate current pos, orientation : %d, %d %d\n", x, y, orientation);
+        //Debug::printf("after rotate current pos, orientation : %d, %d %d\n", x, y, orientation);
     }
 };
 

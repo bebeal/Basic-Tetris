@@ -18,6 +18,7 @@
 #include "sys.h"
 #include "keyboard.h"
 #include "graphics.h"
+#include "fonts.h"
 
 struct Stack {
     static constexpr int BYTES = 4096;
@@ -159,6 +160,7 @@ extern "C" void kernelInit(void) {
     openIRQ(1);
     if (SMP::me() == 0) {
         clear_screen();
+        psf_init();
     }
 
     auto myOrder = howManyAreHere.add_fetch(1);

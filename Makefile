@@ -157,12 +157,16 @@ qemu_cmd:
 qemu_config_flags:
 	@echo "${QEMU_CONFIG_FLAGS}"
 
-the_kernel :
+the_kernel : the_fonts
 	@$(MAKE) -C kernel --no-print-directory build/kernel.img
+
+the_fonts :
+	@$(MAKE) -C fonts
 
 clean:
 	rm -rf *.diff *.raw *.out *.result *.kernel *.failure *.time *.data
 	(make -C kernel clean)
+	(make -C fonts clean)
 
 ${TEST_RAWS} : %.raw : Makefile the_kernel %.data
 	@echo -n "$* ... "
