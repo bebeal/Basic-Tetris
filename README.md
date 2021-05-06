@@ -364,12 +364,84 @@ Once in graphic mode, you no longer have the BIOS or the hardware to draw fonts 
 ##### PSF File
 On every Linux distributions, you can find a lot of console fonts with the extension .psf or .psfu. They can be found in `/usr/share/kbd/consolefonts/`.
 There are 2 versions of PSF, indicated by the magic number at the start of the file, but for this example we'll just use PSF1, just like the default one in the code. The PSF1 format is as follows:
-* Header
-  * Magic Number: 2 bytes: `0x36 0x04`
-  * Mode : 1 byte :   
-* Glyphs
-* None/Unicode Table
+``` C++
+typedef struct {
+    uint8_t magic[2]; // 0x36 and 0x04
+    uint8_t mode; // how many character in file and if there is unicode info     
+    /* 0 : 256 characters, no unicode_data 
+       1 : 512 characters, no unicode_data 
+       2 : 256 characters, with unicode_data 
+       3 : 512 characters, with unicode_data 
+    */                                                                  
+    uint8_t height; 
+} PSF_font;
+```
 
+The PSF1 format has a constant width of 8 bytes, which is one of the main differences from the PSF2 version which has a variable width.
+
+##### Example Glyph
+Here is what a glyph would look like for the character `A` with a height of 16. Each bit in the glyph describes a pixel on the screen. When you see a 1 you color in a specified color, otherwise you can leave the background transparent or color it a specified background color. 
+```
+00000000  byte  0
+00000000  byte  1
+00000000  byte  2
+00010000  byte  3
+00111000  byte  4
+01101100  byte  5
+11000110  byte  6
+11000110  byte  7
+11111110  byte  8
+11000110  byte  9
+11000110  byte 10
+11000110  byte 11
+11000110  byte 12
+00000000  byte 13
+00000000  byte 14
+00000000  byte 15
+```
+
+##### PSF to ELF
+We'll be convering PSF to an ELF object file to link with the kernel and be able to parse it
+
+```bash
+objcopy -O elf32-i386 -B i386 -I binary font.psf font.o
+readelf -s font.o
+ 
+Symbol table '.symtab' contains 5 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 0000000000000000     0 SECTION LOCAL  DEFAULT    1 
+     2: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT    1 _binary_font_psf_start
+     3: 0000000000008020     0 NOTYPE  GLOBAL DEFAULT    1 _binary_font_psf_end
+     4: 0000000000008020     0 NOTYPE  GLOBAL DEFAULT  ABS _binary_font_psf_size
+```
+
+##### Initializing PSF
+In init you can initialize a unicode mapping incase your PSF contains a unicode table, but this optional, and can be memory intensive if you don't have a good map data structure so we avoid it and instead will use just ints as a direct index into the glyph bitmap.
+
+##### Drawing a Char
+Now, drawing a char on the screen then simply becomes:
+```C++
+void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
+    PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
+    // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
+    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;
+    // map top left pixel of bitmap to pixel (x,y) coordinates 
+    uint32_t x = cx * 8;
+    uint32_t y = cy * font->height;
+    int mask[8]={1,2,4,8,16,32,64,128};
+    // finally display pixels according to the bitmap */
+    for(uint32_t py = 0; py < font->height; py++) {
+        for(uint32_t px = 0; px < 8; px++) {
+            Color color = bg;
+            if ((glyph[py]) & mask[px]) {
+                color = fg;
+            }
+            plot(px + x, py + y, color, false);
+        }
+    }
+}
+```
 
 Sources and References:
 * https://wiki.osdev.org/Drawing_In_Protected_Mode
@@ -397,13 +469,4 @@ The logic of moving the pieces is fairly simple each piece can either move left,
 Our generic shape class stores the (x, y) coordinates of the upper left pixel for each shape (in 2 $\times$uint32_t), as well as the type of tetrimino (in a char), the orientation (uint8_t) and defines some other useful constants and virtual methods (`move_left`, `move_down`, `move_right`, `rotate()`) that each tetrimino shape must implement.
 
 
--------- misc
-plan right now:
-program container on screen via vga, and store bitmap of the state in the tetris class, store the edges of the container as it's essentially a topless vertical rectangle
-
-game loop (while pit jiffies hasn't been incremented X number of times), X Pit::jiffies == a single game tick
-    take in keyboard input and map to keyboard moves, regardless of if it's a valid key for the game display the character on the screen to show off the keyboard interrupst
-    we drop the pixel (move_down) every iteration of the loop
-    use a bit map to store the state of the tetris container to know when pieces should stop moving/collide
-    limit the piece moving to only within the container
-    code the logic to remove a row and copy over the remaining tetris container when the user has a line of blocks that stretches across the container
+### TLDR

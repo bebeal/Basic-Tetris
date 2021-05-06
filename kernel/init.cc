@@ -44,6 +44,7 @@ static constexpr uint32_t VMM_FRAMES = HEAP_START + HEAP_SIZE;
 extern "C" void kernelInit(void) {
 
     U8250 uart;
+    //PS2Controller kb;
 
     if (!smpInitDone) {
         Debug::init(&uart);
@@ -119,7 +120,7 @@ extern "C" void kernelInit(void) {
         SMP::init(true);
         smpInitDone = true;
        
-        keyboard::init(new U8042());
+        Keyboard::init(new PS2Controller());
   
         /* initialize IDT */
         IDT::init();
@@ -161,6 +162,17 @@ extern "C" void kernelInit(void) {
     if (SMP::me() == 0) {
         clear_screen();
         psf_init();
+        put_char(65 + 7, 5, 5);
+        put_char(65 + 4, 6, 5);
+        put_char(65 + 11, 7, 5);
+        put_char(65 + 11, 8, 5);
+        put_char(65 + 14, 9, 5);
+        put_char(SPACE, 10, 5);
+        put_char(87, 11, 5);
+        put_char(79, 12, 5);
+        put_char(82, 13, 5);
+        put_char(76, 14, 5);
+        put_char(68, 15, 5);
     }
 
     auto myOrder = howManyAreHere.add_fetch(1);

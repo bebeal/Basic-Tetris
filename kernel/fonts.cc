@@ -4,68 +4,56 @@
 #include "heap.h"
 #include "stdint.h"
 
-uint16_t *unicode = nullptr;
-uint8_t header_size;
+uint16_t *unicode = nullptr; 
+uint8_t  header_size;
 uint16_t num_glyphs;
 uint16_t bytes_per_glyph;
 
 void psf_init() {
     Debug::printf("Initializing font bitmap\n");
-    uint16_t glyph = 0;
     // cast the address to PSF header struct 
     PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
-    header_size = 3;
+    header_size = 4;
     num_glyphs = font->mode & PSF1_MODE512 ? 512 : 256;
     bytes_per_glyph = font->height;
-    // is there a unicode table? 
-    if (0) {
-        Debug::printf("is unicode\n");
+    Debug::printf("Number of Glyphs: %d\nNumber of bytes per glyph: %d\n", num_glyphs, bytes_per_glyph);
+    if (0) {  // font->mode & PSF1_MODEHASTAB, not doing this without a map, too memory intensive to use array indices as unicode values, largest encoded value is 0xfffd thus would need 0xfffd * 8 
         // get the offset of the table 
-        unsigned char *s = ((unsigned char *)&_binary_Uni1_VGA16_psf_start + 3 + num_glyphs * bytes_per_glyph);
+        unsigned char *s = (((unsigned char *)&_binary_Uni1_VGA16_psf_start) + header_size + num_glyphs * bytes_per_glyph);
         // allocate memory for translation table 
-        unicode = (uint16_t *)malloc(16 * num_glyphs); // maps unicode value : glyph index
-        while ((uint32_t) s < (uint32_t)_binary_Uni1_VGA16_psf_end) {
-            uint16_t uc = (uint16_t)(((unsigned char *)s)[0]);
-            if (uc == 0xFF) {
-                glyph++;
-                s++;
-                continue;
-            } else if (uc & 128) {
-                // UTF-8 to unicode 
-                if ((uc & 32) == 0) {
-                    uc = ((s[0] & 0x1F) << 6) + (s[1] & 0x3F);
-                    s++;
-                } else if ((uc & 16) == 0) {
-                    uc = ((((s[0] & 0xF) << 6) + (s[1] & 0x3F)) << 6) + (s[2] & 0x3F);
+        //unicode = new uint16_t[512*16]; // maps unicode value : glyph index
+        uint16_t largest = 0;
+        for(uint32_t gi = 0; gi < num_glyphs; gi++) {
+            uint16_t stop_byte = 0; // stops when stop_byte == PSF1_SEPERATOR
+            while(stop_byte != PSF1_SEPARATOR) {
+                uint16_t val = 0;
+                if (((((uint16_t) s[1]) << 8) + s[0]) == PSF1_STARTSEQ) {
                     s += 2;
-                } else if ((uc & 8) == 0) {
-                    uc = ((((((s[0] & 0x7) << 6) + (s[1] & 0x3F)) << 6) + (s[2] & 0x3F)) << 6) + (s[3] & 0x3F);
-                    s += 3;
-                } else
-                    uc = 0;
+                }
+                val = (((uint16_t) s[1]) << 8) + s[0];
+                if (val > largest) {
+                    largest = val;
+                }
+                s += 2;
+                stop_byte = (((uint16_t) s[1]) << 8) + s[0];
+                //unicode[val] = gi;
             }
-            // save translation 
-            unicode[uc] = glyph;
-            s++;
+            s += 2;
         }
     } else {
         unicode = nullptr;
     }
 }
 
-
-void put_char(uint16_t c, int cx, int cy, Color fg, Color bg) {
+void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
     PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
-    // unicode translation 
-    if (unicode != nullptr) {
-        c = unicode[c];
-    }
-    // get the glyph for the character. If there's no glyph for a given character, we'll use c as a glyph index 
-    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + 3 + (c > 0 && c < num_glyphs ? c : 0) * bytes_per_glyph;
+    // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
+    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;
     // map top left pixel of bitmap to pixel (x,y) coordinates 
     uint32_t x = cx * 8;
     uint32_t y = cy * font->height;
-    int mask[8]={1,2,4,8,16,32,64,128};
+    //int mask[8]={1,2,4,8,16,32,64,128};
+    int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     // finally display pixels according to the bitmap */
     for(uint32_t py = 0; py < font->height; py++) {
         for(uint32_t px = 0; px < 8; px++) {
@@ -78,6 +66,6 @@ void put_char(uint16_t c, int cx, int cy, Color fg, Color bg) {
     }
 }
 
-void put_char(uint16_t c, int cx, int cy) {
-    put_char(c, cx, cy, White, Black);
+void put_char(uint16_t index, int cx, int cy) {
+    put_char(index, cx, cy, White, Black);
 }

@@ -2,15 +2,15 @@
 Reference: https://wiki.osdev.org/%228042%22_PS/2_Controller
 */
 
+#ifndef _KEYBOARD_H_
+#define _KEYBOARD_H_
+
 //#define DEBUG
 #ifdef DEBUG
   #define D if(1)
 #else 
   #define D if(0)
 #endif
-
-#ifndef _KEYBOARD_H_
-#define _KEYBOARD_H_
 
 #include "stdint.h"
 #include "config.h"
@@ -21,7 +21,9 @@ Reference: https://wiki.osdev.org/%228042%22_PS/2_Controller
 #include "smp.h"
 #include "debug.h"
 
-namespace PS2 {
+static constexpr bool TRANSLATE = true;
+
+namespace PS2_PORT {
     constexpr uint32_t DATA_PORT = 0x60;
     constexpr uint32_t STAT_COMM_PORT = 0x64;
 }
@@ -38,53 +40,53 @@ namespace SB {
     constexpr char Fail1 = 0xFD;
 }
 
-class U8042 {
+class PS2Controller {
 public:
     bool dual;
     constexpr static uint32_t KBVector = 0x09; 
 
-    U8042() {
-        Debug::printf("| Initializing U8042 PS/2 Port device/s\n");
+    PS2Controller() {
+        Debug::printf("| Initializing PS2Controller PS/2 Port device/s\n");
 
         /*
         Disable Devices
         */
-        D Debug::printf("| U8042: Disabling Device/s\n");
-        outb(PS2::STAT_COMM_PORT, 0xAD);
-        outb(PS2::STAT_COMM_PORT, 0xA7);
+        D Debug::printf("| PS2Controller: Disabling Device/s\n");
+        outb(PS2_PORT::STAT_COMM_PORT, 0xAD);
+        outb(PS2_PORT::STAT_COMM_PORT, 0xA7);
 
         /*
         Flush the output buffer
         */
-        D Debug::printf("| U8042: Flushing the output buffer\n");
-        while((inb(PS2::STAT_COMM_PORT) & 0x1)) {
-            inb(PS2::DATA_PORT);
+        D Debug::printf("| PS2Controller: Flushing the output buffer\n");
+        while((inb(PS2_PORT::STAT_COMM_PORT) & 0x1)) {
+            inb(PS2_PORT::DATA_PORT);
         }
 
         /*
         Set the Controller Configuration Byte
         */
-        D Debug::printf("| U8042: Setting the Controller Configuration\n");
+        D Debug::printf("| PS2Controller: Setting the Controller Configuration\n");
         // temporarily disable all IRQ's
         closeIRQ(1); // open this IRQ to recieve keyboard interrupts again
         unsigned char response;
         send_command(0x20, 0, &response);
         dual = (response & 0x20) != 0; // test if bit 5 was set. If it was clear, then you know it can't be a "dual channel" PS/2 controller
-        D Debug::printf("| U8042: Dual Channel: %d\n", dual);
-        D Debug::printf("| U8042: Controller Configuration Before: 0x%x\n", response);
+        D Debug::printf("| PS2Controller: Dual Channel: %d\n", dual);
+        D Debug::printf("| PS2Controller: Controller Configuration Before: 0x%x\n", response);
         response = (response & 0xBC); // clear bits 0, 1, 6
-        D Debug::printf("| U8042: Controller Configuration After: 0x%x\n", response);
+        D Debug::printf("| PS2Controller: Controller Configuration After: 0x%x\n", response);
         send_command(0x60, response, nullptr);
 
         /*
         Perform Controller Self Test
         */
-        D Debug::printf("| U8042: Performing Controller Self Test\n");
+        D Debug::printf("| PS2Controller: Performing Controller Self Test\n");
         send_command(0xAA, 0, &response); // 0x55 test passed; 0xFC test failed
         if (response == 0xFC) {
-            D Debug::PANIC("| U8042: Controller Test failed\n");
+            D Debug::PANIC("| PS2Controller: Controller Test failed\n");
         } else {
-            D Debug::printf("| U8042: Test Passed; Returned: 0x%x\n", response); 
+            D Debug::printf("| PS2Controller: Test Passed; Returned: 0x%x\n", response); 
         }
 
         /*
@@ -92,75 +94,78 @@ public:
         */
         send_command(0xAB, 0, &response); // 0x00 test passed ;
         if (response != 0) {
-            D Debug::printf("| U8042: First PS/2 port Test Failed; Returned: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: First PS/2 port Test Failed; Returned: 0x%x\n", response);
         } else {
-            D Debug::printf("| U8042: First PS/2 port Test Passed\n");
+            D Debug::printf("| PS2Controller: First PS/2 port Test Passed\n");
         }
         if (dual) {
             send_command(0xA9, 0, &response); // 0x00 test passed ;
             if (response != 0) {
-                D Debug::printf("| U8042: Second PS/2 port Test Failed; Returned: 0x%x\n", response);
+                D Debug::printf("| PS2Controller: Second PS/2 port Test Failed; Returned: 0x%x\n", response);
             } else {
-                D Debug::printf("| U8042: Second PS/2 port Test Passed\n");
+                D Debug::printf("| PS2Controller: Second PS/2 port Test Passed\n");
             }
         }
 
         /*
         Enable Ports
         */
-        D Debug::printf("| U8042: Enabling Device/s\n");
-        outb(PS2::STAT_COMM_PORT, 0xAE);
+        D Debug::printf("| PS2Controller: Enabling Device/s\n");
+        outb(PS2_PORT::STAT_COMM_PORT, 0xAE);
         if (dual) {
-            outb(PS2::STAT_COMM_PORT, 0xA8);
+            outb(PS2_PORT::STAT_COMM_PORT, 0xA8);
         }
         send_command(0x20, 0, &response);
         // enabled interrupts for usable PS/2 ports
-        D Debug::printf("| U8042: Changing Config; Old Config: 0x%x\n", response);
+        D Debug::printf("| PS2Controller: Changing Config; Old Config: 0x%x\n", response);
         response = (response | 0x01); // bit 0 for first PS/2 port interrupt, bit 6 for PS/2 port translation
+        if (TRANSLATE) {
+            response = response | 0x40;
+        }
         if (dual) {
             response = (response | 0x2); // bit 1 for second PS/2 port interrupt
         }
-        D Debug::printf("| U8042: Changing Config; New Config: 0x%x\n", response);
+        D Debug::printf("| PS2Controller: Changing Config; New Config: 0x%x\n", response);
         send_command(0x60, response, nullptr);
 
         /*
         Reset PS/2 Devices
         */
-        D Debug::printf("| U8042: Resetting Device/s\n");
+        D Debug::printf("| PS2Controller: Resetting Device/s\n");
 
         // device 1
         poll_write();
-        outb(PS2::DATA_PORT, 0xFF);
+        outb(PS2_PORT::DATA_PORT, 0xFF);
         poll_read();
-        response = inb(PS2::DATA_PORT) & 0xFF;
+        response = inb(PS2_PORT::DATA_PORT) & 0xFF;
         if (response == 0xFA) {
-            D Debug::printf("| U8042: Device 1 Command Acknowledged: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Device 1 Command Acknowledged: 0x%x\n", response);
         } else {
-            D Debug::printf("| U8042: Device 1 responded: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Device 1 responded: 0x%x\n", response);
         }
     
         poll_read();
-        response = inb(PS2::DATA_PORT) & 0xFF;
+        response = inb(PS2_PORT::DATA_PORT) & 0xFF;
         if (response == 0xFC || response == 0xFD) {
-            D Debug::PANIC("| U8042: Reset Device 1 failed\n");
+            D Debug::PANIC("| PS2Controller: Reset Device 1 failed\n");
         } else {
-            D Debug::printf("| U8042: Reset Device 1 Passed; Returned: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Reset Device 1 Passed; Returned: 0x%x\n", response);
         }
 
         // device 2
         send_command(0xD4, 0xFF, &response);
         response = response & 0xFF;
         if (response == 0xFA) {
-            D Debug::printf("| U8042: Device 2 Command Acknowledged: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Device 2 Command Acknowledged: 0x%x\n", response);
         } else {
-            D Debug::printf("| U8042: Device 2 responded: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Device 2 responded: 0x%x\n", response);
         }
         poll_read();
-        response = inb(PS2::DATA_PORT) & 0xFF;
+        response = inb(PS2_PORT::DATA_PORT) & 0xFF;
         if (response == 0xFC || response == 0xFD) {
-            D Debug::PANIC("| U8042: Reset Device 2 failed\n");
+            D Debug::PANIC("| PS2Controller: Reset Device 2 failed\n");
         } else {
-            D Debug::printf("| U8042: Reset Device 2 Passed; Returned: 0x%x\n", response);
+            D Debug::printf("| PS2Controller: Reset Device 2 Passed; Returned: 0x%x\n", response);
         }
         // Enable Scanning Mode to send scancodes
         enable_scanning();
@@ -170,7 +175,7 @@ public:
     make sure that the controller is ready for data (by making sure bit 1 of the Status Register is clear).
     */
     static void poll_write() {
-        while((inb(PS2::STAT_COMM_PORT) & 0x2));
+        while((inb(PS2_PORT::STAT_COMM_PORT) & 0x2));
     }
 
 
@@ -178,7 +183,7 @@ public:
     make sure that the controller is ready for you to read data (by making sure bit 0 of status register is set).
     */
     static void poll_read() {
-        while(!(inb(PS2::STAT_COMM_PORT) & 0x1));
+        while(!(inb(PS2_PORT::STAT_COMM_PORT) & 0x1));
     }
 
     /*
@@ -190,14 +195,14 @@ public:
     has arrived (by making sure bit 0 of the Status Register is set)
     */
     static void send_command(unsigned char command_byte, unsigned char next_byte, unsigned char* response) {
-        outb(PS2::STAT_COMM_PORT, command_byte);
+        outb(PS2_PORT::STAT_COMM_PORT, command_byte);
         if (next_byte) {
             poll_write();
-            outb(PS2::DATA_PORT, next_byte);
+            outb(PS2_PORT::DATA_PORT, next_byte);
         }
         if (response != nullptr) {
             poll_read();
-            *response = inb(PS2::DATA_PORT);
+            *response = inb(PS2_PORT::DATA_PORT);
         }
     }
 
@@ -205,12 +210,12 @@ public:
     Enables scanning
     */
     static void enable_scanning() {
-        D Debug::printf("| U8042: Enabling scanning\n");
+        D Debug::printf("| PS2Controller: Enabling scanning\n");
         poll_write();
-        outb(PS2::DATA_PORT, 0xF4);
+        outb(PS2_PORT::DATA_PORT, 0xF4);
         poll_read();
-        unsigned char response = inb(PS2::DATA_PORT);
-        D Debug::printf("| U8042: Response: 0x%x\n", response);
+        unsigned char response = inb(PS2_PORT::DATA_PORT);
+        D Debug::printf("| PS2Controller: Response: 0x%x\n", response);
     }
 
     /*
@@ -222,59 +227,27 @@ public:
         poll_write();
         send_command(0xD2, 0xFA, nullptr); 
     }
-
-    // random commands to devices for testing
-    static void random_commands() {
-        // talking to device 1
-        Debug::printf("getting scan code set\n");
-        poll_write();
-        outb(PS2::DATA_PORT, 0xF0); // scan code set 
-        poll_read();
-        unsigned char response = inb(PS2::DATA_PORT);
-        Debug::printf("should be 0xfa Response: 0x%x\n", response);
-        poll_write();
-        outb(PS2::DATA_PORT, 0); // sub command?
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("should be 0xfa Response: 0x%x\n", response);
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        // should get getting scan code set
-        Debug::printf("should be scan code response Response: 0x%x\n", response);
-
-        Debug::printf("Getting device 1 identity\n");
-        poll_write();
-        outb(PS2::DATA_PORT, 0xF2);
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("should be 0xfa Response: 0x%x\n", response);
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("id: 0x%x\n", response); // 0xAB
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("id: 0x%x\n", response); // 0x41
-        // 0xAB, 0x41 is MF2 keyboard with translation enabled in the PS/Controller https://wiki.osdev.org/%228042%22_PS/2_Controller#Detecting_PS.2F2_Device_Types
-        
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("id: 0x%x\n", response); // where tf did this 0 come from
-
-        // device 2
-        Debug::printf("Getting device 2 identity\n");
-        send_command(0xD4, 0xF2, &response);
-        Debug::printf("should be 0xfa Response: 0x%x\n", response);
-        poll_read();
-        response = inb(PS2::DATA_PORT);
-        Debug::printf("id: 0x%x\n", response); // 0x00 is Standard PS/2 mouse
-    }
 };
 
+#define BUFF_LEN 128
 
-class keyboard {
-    static U8042* ps2C;
+class Keyboard {
+    static PS2Controller* ps2C;
+    static bool caps;
+    static bool scroll;
+    static bool number;
+    static uint8_t shift;
+    static uint8_t ctrl;
+    static uint8_t head;
+    static uint8_t tail;
+    static uint8_t keys[256];
+    static uint8_t kb_queue[BUFF_LEN];
+    //static uint8_t
 public:
-    static void init(U8042* ps2C);
+    static void init(PS2Controller* ps2C);
+    static uint8_t get_key();
+    static uint8_t get_ascii(uint8_t key);
+    static void handle_interrupt();
 };
 
 

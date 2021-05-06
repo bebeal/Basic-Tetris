@@ -11,6 +11,11 @@
 #define PSF1_MODEHASTAB 0x02
 #define PSF1_MODE512 0x01
 #define PSF1_MAGIC_OK(x) ((x)[0] == PSF1_MAGIC0 && (x)[1] == PSF1_MAGIC1)
+#define PSF1_SEPARATOR 0xFFFF
+#define PSF1_STARTSEQ 0xFFFE
+#define A 65
+#define a 97
+#define SPACE 32
 
 typedef struct {
     uint8_t magic[2]; // 0x36 and 0x04
@@ -25,10 +30,9 @@ extern char _binary_Uni1_VGA16_psf_end;
 extern char _binary_Uni1_VGA16_psf_size;
  
 void psf_init();
- 
-void put_char(uint16_t c, int cx, int cy, Color fg, Color bg);
+void put_char(uint16_t index, int cx, int cy, Color fg, Color bg);
+void put_char(uint16_t index, int cx, int cy);
 
-void put_char(uint16_t c, int cx, int cy);
 
 #endif
 
