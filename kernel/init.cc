@@ -127,6 +127,8 @@ extern "C" void kernelInit(void) {
         Pit::calibrate(1000);
 
         SMP::running.fetch_add(1);
+        clear_screen();
+        psf_init();
 
         // The reset EIP has to be
         //     - divisible by 4K (required by LAPIC)
@@ -160,19 +162,8 @@ extern "C" void kernelInit(void) {
     sti();
     openIRQ(1);
     if (SMP::me() == 0) {
-        clear_screen();
-        psf_init();
-        put_char(65 + 7, 5, 5);
-        put_char(65 + 4, 6, 5);
-        put_char(65 + 11, 7, 5);
-        put_char(65 + 11, 8, 5);
-        put_char(65 + 14, 9, 5);
-        put_char(SPACE, 10, 5);
-        put_char(87, 11, 5);
-        put_char(79, 12, 5);
-        put_char(82, 13, 5);
-        put_char(76, 14, 5);
-        put_char(68, 15, 5);
+        //psf_init();
+        ex();
     }
 
     auto myOrder = howManyAreHere.add_fetch(1);

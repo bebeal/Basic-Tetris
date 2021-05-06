@@ -233,15 +233,15 @@ public:
 
 class Keyboard {
     static PS2Controller* ps2C;
-    static bool caps;
-    static bool scroll;
-    static bool number;
-    static uint8_t shift;
-    static uint8_t ctrl;
-    static uint8_t head;
-    static uint8_t tail;
-    static uint8_t keys[256];
-    static uint8_t kb_queue[BUFF_LEN];
+    static bool caps;                        // 1 if CapsLock toggled, 0 otherwise
+    static bool scroll;                      // 1 if ScrollLock toggled, 0 otherwise
+    static bool num;                         // 1 if NumLock toggled, 0 otherwise
+    static uint8_t shift;                    // 0x1 if left shift pressed, 0x2 if right shift pressed, 0 otherwise
+    static uint8_t ctrl;                     // 1 if ctrl is pressed
+    static uint8_t keys[256];                // 1:1 mapping of the keys 
+    static uint8_t kb_queue[BUFF_LEN];       // queue continuously updating/storing ASCII values pressed
+    static uint8_t head;                     // head of the kb_queue
+    static uint8_t tail;                     // tail of the kb_queue
 public:
     static void init(PS2Controller* ps2C);
     static uint8_t get_ascii();

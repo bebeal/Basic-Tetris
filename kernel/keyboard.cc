@@ -13,6 +13,9 @@ uint8_t Keyboard::head = 0;
 uint8_t Keyboard::tail = 0;
 uint8_t Keyboard::shift = 0;
 uint8_t Keyboard::ctrl = 0;
+bool Keyboard::caps = false;
+bool Keyboard::num = false;
+bool Keyboard::scroll = false;
 uint8_t Keyboard::keys[256];
 uint8_t Keyboard::kb_queue[BUFF_LEN];
 
@@ -43,10 +46,13 @@ void Keyboard::handle_interrupt() {
         uint8_t pressed_byte = byte & 0x7F;
         // Check if we're releasing a shift key.
         if(pressed_byte == LSHIFT) {
+            //Debug::printf("lshift u\n");
             shift = shift & 0x02;
         } else if(pressed_byte == RSHIFT) { 
+            //Debug::printf("rshift u\n");
             shift = shift & 0x01;
         } else if(pressed_byte == CTRL) {
+            //Debug::printf("ctrl u\n");
             ctrl = 0;
         }
         keys[pressed_byte] = 0;
@@ -62,14 +68,19 @@ void Keyboard::handle_interrupt() {
 
     if(byte == LSHIFT) {
         shift = shift | 0x01;
-    } else if(RSHIFT == 0x36) {
+        //Debug::printf("lshift\n");
+    } else if(byte == RSHIFT) {
         shift = shift | 0x02;
+        //Debug::printf("rshift\n");
     } else if(byte == CTRL) {
         ctrl = 1;
+        //Debug::printf("ctrl\n");
+    } else if (byte == CAPS) {
+        caps = !caps;
     }
 
     const uint8_t *codes  = lower_ascii_codes;
-    if (shift) {
+    if ((shift && !caps) || (!shift && caps)) {
         codes = upper_ascii_codes;
     }
 
@@ -78,7 +89,8 @@ void Keyboard::handle_interrupt() {
     if(ascii != 0) {
         kb_queue[head] = ascii;
         head = nhead;
-        put_char(ascii, 0, 0);
+        put_char(ascii, 1, 1);
+        //Debug::printf("0x%x %c\n", byte, ascii);
         return;
     }
 }

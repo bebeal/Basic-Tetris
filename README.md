@@ -1,4 +1,5 @@
-# Basic-Tetris with a minimal Linux Kernel
+# Basic-Tetris with a Minimal Kernel
+Playing tetris from a system call, implemented with a minimal kernel built in Dr. Gheiths CS:439 Operating Systems, modeled after a Linux Kernel with an i386 architectore.
 
 ## Need to Implement
 * <del>Keyboard Inputs</del>
@@ -14,7 +15,7 @@ The PS/2 Keyboard is a device that talks to a PS/2 controller (Intel 8042; AIP) 
 <img src="imgs/Ps2-kbc.png" alt="Ps2-kbc">
 
 ##### Dual Channel PS/2 Controllers
-Dual Channels PS/2 Controllers (like the one displayed above) support PS/2 style mice along with PS/2 keyboards. The first PS/2 connector (typically the keyboard) connects to PIC1 (Master PIC) thorugh IRQ1. The Second PS/2 Controller (typically the mouse) talks to PIC2 (Slave PIC) through IRQ12, which cascades to PIC1 through IRQ2.
+Dual Channels PS/2 Controllers (like the one displayed above) support PS/2 style mice along with PS/2 keyboards. The first PS/2 connector (typically the keyboard) connects to PIC1 (Master PIC) through IRQ1. The Second PS/2 Controller (typically the mouse) talks to PIC2 (Slave PIC) through IRQ12, which cascades to PIC1 through IRQ2.
 
 #### PS/2 Controller IO Ports
 The PS/2 Controller itself uses 2 IO ports
@@ -143,6 +144,40 @@ static void send_command(unsigned char command_byte, unsigned char next_byte, un
 }
 ```
 
+#### Scancode Translation
+Once we eventually enable keyboard interrupts we'll be recieving scan codes from the keyboard when a user presses a key. We'll translate these scan codes into ASCII to more easily print characters to the screen once we also implement that. Typically, PS/2 keyboards will send scan codes from Scan Code Set 2 (Introduced with the IBM PC AT). One could use these but we opt to convert them to Scan Code Set 1 via translation through the PS/2 Controller by flipping bit 6 in the configuration byte. Thus in our handler we'll be recieving Scan Code Set 1 scan codes which we can map to ascii characters and/or other things. The state of the keyboard that will be kept consist of:
+```C++
+bool caps;                        // 1 if CapsLock toggled, 0 otherwise
+bool scroll;                      // 1 if ScrollLock toggled, 0 otherwise
+bool num;                         // 1 if NumLock toggled, 0 otherwise
+uint8_t shift;                    // 0x1 if left shift pressed, 0x2 if right shift pressed, 0 otherwise
+uint8_t ctrl;                     // 1 if ctrl is pressed
+uint8_t keys[256];                // 1:1 mapping of the keys 
+uint8_t kb_queue[BUFF_LEN];       // queue continuously updating/storing ASCII values pressed
+uint8_t head;                     // head of the kb_queue
+uint8_t tail;                     // tail of the kb_queue
+```
+Now in the handler we'll enter via interrupts we can manipulate this state as the keyboard state dynamically changes. Converting to ASCII simply means storing a mapping of Scan Code Set 1 : ASCII character and then using the scan code as an index. To check if a key has been released you can perform a simple check like `byte & 0x80` where byte is the scan code send to the handler. This is because in Scan Code Set 1, when a key is released it will send `0x80 | <scan code for key being released>` as a scan code. So then your handler can look something akin to
+
+```C++
+void handle_interrupt() {
+    // the current key being pressed
+    unsigned char byte = inb(0x60);
+
+    // key release 
+    if(byte & 0x80) {
+        // check if one of the toggle keys and adjust state
+        ...
+    } else {
+        // key being pressed, check if toggle keys and adjust state
+        ...
+        // map to ascii value, store in queue
+        ...
+    }
+
+}
+```
+
 ### Interrupts with PS/2 Devices
 When IRQ1 occurs you just read from IO Port 0x60 (there is no need to check bit 0 in the Status Register first), send the EOI (0x20) to the interrupt controller and return from the interrupt handler. You know that the data came from the first PS/2 device connected because you received an IRQ1.
 
@@ -208,11 +243,11 @@ You need to send an EOI (end of interrupt) to the PIC to indicate that we have f
 `SMP::eoi_reg.set(0);` where the offset for the EOI register is `0b0h`
 
 
-
 Sources and References: 
 * https://wiki.osdev.org/PS2_Keyboard
 * https://wiki.osdev.org/APIC
 * https://wiki.osdev.org/IOAPIC
+* https://github.com/knusbaum/kernel/blob/master/keyboard.c
 
 
 ## Writing to VGA Memory
@@ -255,7 +290,9 @@ int $0x10
 ```
 
 #### Writing to VGA Memory
-Now that were in the correct video mode, we can simply write to VGA Memory, which for our Mode is located at `0xA000`, to display colors on the screen. The color displayed depends on the byte value written to memory. The first 16 VGA colors:
+Now that were in the correct video mode, we can simply write to VGA Memory, which for our Mode is located at `0xA000`, to display colors on the screen. The color displayed depends on the byte value written to memory. 
+
+The first 16 VGA colors:
 <div class="table">
     <table>
       <tbody><tr>
@@ -331,12 +368,25 @@ Now that were in the correct video mode, we can simply write to VGA Memory, whic
 
 #### Plotting Pixels
 
-The screen is 320 pixels in width and 200 pixels in height. This is mapped 0 to 319 on the x axis and 0 to 199 on the y axis, with the origin (0,0) at the top-left corner. Since this is a 256-color mode, each pixel represents 8 bits or one byte, so the memory needed is 320$\times$200 or 64,000 bytes. Since memory is linear, the offset into computer memory must be calculated to plot a pixel. To do this the y value is multiplied by the width of the screen, or 320, and the x value is added to that:
+The screen is 320 pixels in width and 200 pixels in height. This is mapped 0 to 319 on the x axis and 0 to 199 on the y axis, with the origin (0,0) at the top-left corner. Since this is a 256-color mode, each pixel represents 8 bits or one byte, so the memory needed is 320$*$200 or 64,000 bytes. Since memory is linear, the offset into computer memory must be calculated to plot a pixel. To do this the y value is multiplied by the width of the screen, or 320, and the x value is added to that:
 ```C++
 uint32_t offset(uint32_t x, uint32_t y) {
     return x + (y << 8) + (y << 6);
 }
 ```
+
+Then plotting a pixel simply becomes:
+```C++
+void plot(uint32_t x, uint32_t y, Color color, bool write_to_buffer) {
+    if (write_to_buffer) {
+        double_buffer[offset(x, y)] = color;
+    } else {
+        VGA[offset(x, y)] = color;
+    }
+}
+```
+
+Where `write_to_buffer`, and `double_buffer` is a optimization technique explained below. Color is just a enumerated `uint8_t` type, and x, y as it suggests is the `(x, y)` cartesian coordinates on the screen. Where `(0, 0)` is the top left corner of the screen and `y` increases positively the lower on the screen you are, and `x` increases positivlely the more right on the screen you are.
 
 #### Optimizations
 Some optimizations should be done to make writing to VGA memory more practical.
@@ -362,8 +412,8 @@ Double Buffering is a fairly simple concept to grasp. Instead of drawing directl
 Once in graphic mode, you no longer have the BIOS or the hardware to draw fonts for you. Thus we have to draw the characters pixel by pixel to the screen. Which can be tedious but is eased with bit maps.
 
 ##### PSF File
-On every Linux distributions, you can find a lot of console fonts with the extension .psf or .psfu. They can be found in `/usr/share/kbd/consolefonts/`.
-There are 2 versions of PSF, indicated by the magic number at the start of the file, but for this example we'll just use PSF1, just like the default one in the code. The PSF1 format is as follows:
+On every Linux distributions, you can find a lot of console fonts with the extension .psf or .psfu, which store bitmap glyphs of characters. They can be found in `/usr/share/kbd/consolefonts/`.
+There are 2 versions of PSF, indicated by the magic number at the start of the file, but for this example we'll just use the PSF1, like the default one in the code, and like the ones in the directory specified. The PSF1 format is as follows:
 ``` C++
 typedef struct {
     uint8_t magic[2]; // 0x36 and 0x04
@@ -416,9 +466,6 @@ Symbol table '.symtab' contains 5 entries:
      4: 0000000000008020     0 NOTYPE  GLOBAL DEFAULT  ABS _binary_font_psf_size
 ```
 
-##### Initializing PSF
-In init you can initialize a unicode mapping incase your PSF contains a unicode table, but this optional, and can be memory intensive if you don't have a good map data structure so we avoid it and instead will use just ints as a direct index into the glyph bitmap.
-
 ##### Drawing a Char
 Now, drawing a char on the screen then simply becomes:
 ```C++
@@ -430,7 +477,7 @@ void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
     uint32_t x = cx * 8;
     uint32_t y = cy * font->height;
     int mask[8]={1,2,4,8,16,32,64,128};
-    // finally display pixels according to the bitmap */
+    // finally display pixels according to the bitmap 
     for(uint32_t py = 0; py < font->height; py++) {
         for(uint32_t px = 0; px < 8; px++) {
             Color color = bg;
@@ -438,6 +485,28 @@ void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
                 color = fg;
             }
             plot(px + x, py + y, color, false);
+        }
+    }
+}
+```
+
+Instead of always writing a background color you can also use a variation of this function with a transparent background.
+
+```C++
+void put_char(uint16_t index, int cx, int cy, Color fg) {
+    PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
+    // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
+    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;
+    // map top left pixel of bitmap to pixel (x,y) coordinates 
+    uint32_t x = cx * 8;
+    uint32_t y = cy * font->height;
+    int mask[8]={1,2,4,8,16,32,64,128};
+    // finally display pixels according to the bitmap 
+    for(uint32_t py = 0; py < font->height; py++) {
+        for(uint32_t px = 0; px < 8; px++) {
+            if ((glyph[py]) & mask[px]) {
+                plot(px + x, py + y, fg, false);
+            }
         }
     }
 }

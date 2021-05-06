@@ -36,6 +36,12 @@
 #define LSHIFT (0x2A)
 #define RSHIFT (0x36)
 #define CTRL (0x1D)
+#define CAPS (0x3A)
+#define NUM (0x45)
+#define SCROLL (0x46)
+#define SPACE (0x39)
+#define ENTER (0x1C)
+#define TAB (0x0F)
 
 // Scancode -> ASCII
 const uint8_t lower_ascii_codes[256] = {
