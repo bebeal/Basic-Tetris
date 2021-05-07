@@ -13,11 +13,12 @@ uint8_t Keyboard::head = 0;
 uint8_t Keyboard::tail = 0;
 uint8_t Keyboard::shift = 0;
 uint8_t Keyboard::ctrl = 0;
-bool Keyboard::caps = false;
-bool Keyboard::num = false;
-bool Keyboard::scroll = false;
+bool volatile Keyboard::caps = false;
+bool volatile Keyboard::num = false;
+bool volatile Keyboard::scroll = false;
 uint8_t Keyboard::keys[256];
 uint8_t Keyboard::kb_queue[BUFF_LEN];
+bool volatile Keyboard::display = false;
 
 // register interrupt vector mapping to handler
 void Keyboard::init(PS2Controller* ps2C) {
@@ -26,34 +27,69 @@ void Keyboard::init(PS2Controller* ps2C) {
     IDT::interrupt(PS2Controller::KBVector, (uint32_t)keyboardHandler_);
 }
 
-uint8_t Keyboard::get_ascii() {
-    uint8_t get = tail;
+uint8_t Keyboard::last_press() {
+    if (tail == head) {
+        return 0;
+    }
+    uint32_t c_tail = tail;
     tail = (tail + 1) % BUFF_LEN;
-    return kb_queue[get];
+    return kb_queue[c_tail];
+}
+
+void Keyboard::toggle_display(uint8_t* double_buffer) {
+    // display these 5 lines on the screen starting with the top left K pixel at (3, 1)
+    // Keyboard State
+    // --------------
+    // Toggled: CAPSLOCK 
+    // Holding: LSHIFT + RSHIFT + CTRL +
+    // Key: 
+    if (display) {
+        // toggled and was previously on, clear screen
+        for(uint32_t line = 1; line <= 5; line++) {
+            draw_line(1, line, 30, line, Black, double_buffer);
+        }
+    } else {
+        put_string("Keyboard State:", 2, 1, White, Black, double_buffer);
+        put_string("--------------", 2, 2, White, Black, double_buffer);
+        put_string("Toggled: ", 2, 3, White, Black, double_buffer);
+        put_string("Holding: ", 2, 4, White, Black, double_buffer);
+        put_string("Key: ", 2, 5, White, Black, double_buffer);
+    }
+    display = !display;
+}
+
+void Keyboard::display_(const char* str, uint32_t cx, uint32_t cy) {
+    if (display) {
+        put_string(str, cx, cy, White, Black);
+    }
+}
+
+void Keyboard::display_(uint8_t ascii, uint32_t cx, uint32_t cy) {
+    if (display) {
+        put_char(ascii, cx, cy, White, Black);
+    }
 }
 
 void Keyboard::handle_interrupt() {
-    // overwrite if at tail
+    // overwrite buffer if full
     uint8_t nhead = (head + 1) % BUFF_LEN;
 
     unsigned char byte = inb(0x60);
-
     // key release 
     if(byte & 0x80) {
         uint8_t pressed_byte = byte & 0x7F;
         // Check if we're releasing a shift key.
         if(pressed_byte == LSHIFT) {
-            put_string("        ", 3, 3);
-            //Debug::printf("lshift u\n");
+            display_("        ", 11, 4);
             shift = shift & 0x02;
         } else if(pressed_byte == RSHIFT) { 
-            put_string("        ", 3, 3);
-            //Debug::printf("rshift u\n");
+            display_("        ", 11, 4);
             shift = shift & 0x01;
         } else if(pressed_byte == CTRL) {
-            put_string("      ", 3, 3);
-            //Debug::printf("ctrl u\n");
+            display_("      ", 11, 4);
             ctrl = 0;
+        } else {
+            display_(" ", 7, 5);
         }
         keys[pressed_byte] = 0;
         return;
@@ -61,27 +97,22 @@ void Keyboard::handle_interrupt() {
 
     if(keys[byte] < 10 && keys[byte] > 0) {
         // Key is already pressed. Ignore it.
-        keys[byte]++; // Increment anyway, so we can roll over and repeat. ?
+        keys[byte]++; // Increment anyway, so we can roll over and repeat. 
         return;
     }
     keys[byte]++;
-    
     bool changed = caps;
     if(byte == LSHIFT) {
-        put_string("LSHIFT +", 3, 3);
+        display_("LSHIFT +", 11, 4);
         shift = shift | 0x01;
-        //Debug::printf("lshift\n");
     } else if(byte == RSHIFT) {
-        put_string("RSHIFT +", 3, 3);
+        display_("RSHIFT +", 11, 4);
         shift = shift | 0x02;
-        //Debug::printf("rshift\n");
     } else if(byte == CTRL) {
-        put_string("CTRL +", 3, 3);
+        display_("CTRL +", 11, 4);
         ctrl = 1;
-        //Debug::printf("ctrl\n");
     } else if (byte == CAPS) {
         caps = !caps;
-        //Debug::printf("caps\n");
     }
 
     const uint8_t *codes  = lower_ascii_codes;
@@ -89,12 +120,11 @@ void Keyboard::handle_interrupt() {
         codes = upper_ascii_codes;
     }
 
-    //Debug::printf("caps != change: %d != %d == %d\n", caps, changed, caps != changed);
     if (caps != changed) {
         if (caps) {
-            put_string("CAPSLOCK", 3, 2);
+            display_("CAPSLOCK", 11, 3);
         } else {
-            put_string("        ", 3, 2);
+            display_("        ", 11, 3);
         }
     }
 
@@ -103,14 +133,14 @@ void Keyboard::handle_interrupt() {
     if(ascii != 0) {
         kb_queue[head] = ascii;
         head = nhead;
-        put_char(ascii, 3, 4);
-        //Debug::printf("0x%x %c\n", byte, ascii);
-        return;
+        display_(ascii, 7, 5);
     }
 }
 
 extern "C" void keyboardHandler() {
     Keyboard::handle_interrupt();
-    // send EOI to the interrupt controller to acknowledge we recieved the interrupt
     SMP::eoi_reg.set(0);
 }
+
+
+

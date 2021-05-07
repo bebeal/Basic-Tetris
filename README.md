@@ -147,20 +147,24 @@ static void send_command(unsigned char command_byte, unsigned char next_byte, un
 #### Scancode Translation
 Once we eventually enable keyboard interrupts we'll be recieving scan codes from the keyboard when a user presses a key. We'll translate these scan codes into ASCII to more easily print characters to the screen once we also implement that. Typically, PS/2 keyboards will send scan codes from Scan Code Set 2 (Introduced with the IBM PC AT). One could use these but we opt to convert them to Scan Code Set 1 via translation through the PS/2 Controller by flipping bit 6 in the configuration byte. Thus in our handler we'll be recieving Scan Code Set 1 scan codes which we can map to ascii characters and/or other things. The state of the keyboard that will be kept consist of:
 ```C++
-bool caps;                        // 1 if CapsLock toggled, 0 otherwise
-bool scroll;                      // 1 if ScrollLock toggled, 0 otherwise
-bool num;                         // 1 if NumLock toggled, 0 otherwise
-uint8_t shift;                    // 0x1 if left shift pressed, 0x2 if right shift pressed, 0 otherwise
-uint8_t ctrl;                     // 1 if ctrl is pressed
-uint8_t keys[256];                // 1:1 mapping of the keys 
-uint8_t kb_queue[BUFF_LEN];       // queue continuously updating/storing ASCII values pressed
-uint8_t head;                     // head of the kb_queue
-uint8_t tail;                     // tail of the kb_queue
+class Keyboard {
+    bool caps;                        // 1 if CapsLock toggled, 0 otherwise
+    bool scroll;                      // 1 if ScrollLock toggled, 0 otherwise
+    bool num;                         // 1 if NumLock toggled, 0 otherwise
+    uint8_t shift;                    // 0x1 if left shift pressed, 0x2 if right shift pressed, 0 otherwise
+    uint8_t ctrl;                     // 1 if ctrl is pressed
+    uint8_t keys[256];                // 1:1 mapping of the keys 
+    uint8_t kb_queue[BUFF_LEN];       // queue continuously updating/storing ASCII values pressed
+    uint8_t head;                     // head of the kb_queue
+    uint8_t tail;                     // tail of the kb_queue
+
+    //...
+}
 ```
 Now in the handler we'll enter via interrupts we can manipulate this state as the keyboard state dynamically changes. Converting to ASCII simply means storing a mapping of Scan Code Set 1 : ASCII character and then using the scan code as an index. To check if a key has been released you can perform a simple check like `byte & 0x80` where byte is the scan code send to the handler. This is because in Scan Code Set 1, when a key is released it will send `0x80 | <scan code for key being released>` as a scan code. So then your handler can look something akin to
 
 ```C++
-void handle_interrupt() {
+void Keyboard::handle_interrupt() {
     // the current key being pressed
     unsigned char byte = inb(0x60);
 
@@ -267,7 +271,7 @@ For standard VGA video modes the video memory will be at address `0xA0000` for E
 |0A|	PCjr|640$\times$200$\times$16|
 |0B|	reserved||
 |0C|	reserved||
-|0D|	EGA |320$\times$200$\times$16 |
+|0D|	EGA |320 $\times$200$\times$ 16 |
 |0E|	EGA |640$\times$200$\times$16 |
 |0F|	EGA |640$\times$350 Monochrome graphics|
 |10|	EGA |640$\times$350$\times$16 |
@@ -292,79 +296,8 @@ int $0x10
 #### Writing to VGA Memory
 Now that were in the correct video mode, we can simply write to VGA Memory, which for our Mode is located at `0xA000`, to display colors on the screen. The color displayed depends on the byte value written to memory. 
 
-The first 16 VGA colors:
-<div class="table">
-    <table>
-      <tbody><tr>
-          <th>Value</th>
-          <th>Color</th>
-      </tr>
-      <tr>
-          <td>0</td>
-          <td style="background: #000000 !important; color: #ffffff !important;">Black</td>
-      </tr>
-      <tr>
-          <td>1</td>
-          <td style="background: #000080 !important; color: #ffffff !important;">Blue</td>
-      </tr>
-      <tr>
-          <td>2</td>
-          <td style="background: #008000 !important; color: #ffffff !important;">Green</td>
-      </tr>
-      <tr>
-          <td>3</td>
-          <td style="background: #008080 !important; color: #ffffff !important;">Cyan</td>
-      </tr>
-      <tr>
-          <td>4</td>
-          <td style="background: #800000 !important; color: #ffffff !important;">Red</td>
-      </tr>
-      <tr>
-          <td>5</td>
-          <td style="background: #800080 !important; color: #ffffff !important;">Magenta</td>
-      </tr>
-      <tr>
-          <td>6</td>
-          <td style="background: #808000 !important; color: #ffffff !important;">Brown</td>
-      </tr>
-      <tr>
-          <td>7</td>
-          <td style="background: #C0C0C0 !important; color: #000000 !important;">Light Gray</td>
-      </tr>
-      <tr>
-          <td>8</td>
-          <td style="background: #808080 !important; color: #ffffff !important;">Dark Gray</td>
-      </tr>
-      <tr>
-          <td>9</td>
-          <td style="background: #0000FF !important; color: #ffffff !important;">Light Blue</td>
-      </tr>
-      <tr>
-          <td>10</td>
-          <td style="background: #00FF00 !important; color: #000000 !important;">Light Green</td>
-      </tr>
-      <tr>
-          <td>11</td>
-          <td style="background: #00FFFF; color: #000000; !important">Light Cyan</td>
-      </tr>
-      <tr>
-          <td>12</td>
-          <td style="background: #FF0000; color: #000000; !important">Light Red</td>
-      </tr>
-      <tr>
-          <td>13</td>
-          <td style="background: #FF00FF; color: #000000; !important">Light Magenta</td>
-      </tr>
-      <tr>
-          <td>14</td>
-          <td style="background: #ffff00; color: #000000; !important">Yellow</td>
-      </tr>
-      <tr>
-          <td>15</td>
-          <td style="background: #ffffff; color: #000000; !important">White</td>
-      </tr>
-    </tbody></table>
-  </div>
+##### Mode 13 VGA Colors
+  <img src="imgs/514px-VGA_palette_with_black_borders.svg.png" alt="512p-VGA Palette">
 
 #### Plotting Pixels
 
@@ -377,8 +310,8 @@ uint32_t offset(uint32_t x, uint32_t y) {
 
 Then plotting a pixel simply becomes:
 ```C++
-void plot(uint32_t x, uint32_t y, Color color, bool write_to_buffer) {
-    if (write_to_buffer) {
+void plot(uint32_t x, uint32_t y, Color color, uint8_t *double_buffer) {
+    if (double_buffer != nullptr) {
         double_buffer[offset(x, y)] = color;
     } else {
         VGA[offset(x, y)] = color;
@@ -386,7 +319,7 @@ void plot(uint32_t x, uint32_t y, Color color, bool write_to_buffer) {
 }
 ```
 
-Where `write_to_buffer`, and `double_buffer` is a optimization technique explained below. Color is just a enumerated `uint8_t` type, and x, y as it suggests is the `(x, y)` cartesian coordinates on the screen. Where `(0, 0)` is the top left corner of the screen and `y` increases positively the lower on the screen you are, and `x` increases positivlely the more right on the screen you are.
+Where `double_buffer`, is a optimization technique explained below. Color is just a enumerated `uint8_t` type, and x, y as it suggests is the `(x, y)` cartesian coordinates on the screen. Where `(0, 0)` is the top left corner of the screen and `y` increases positively the lower on the screen you are, and `x` increases positivlely the more right on the screen you are.
 
 #### Optimizations
 Some optimizations should be done to make writing to VGA memory more practical.

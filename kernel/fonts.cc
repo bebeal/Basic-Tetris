@@ -54,7 +54,7 @@ unsigned char* offset(uint16_t index) {
     return (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;;
 }
 
-void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg, bool write_to_buffer) {
+void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg, uint8_t *double_buffer) {
     // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
     unsigned char *glyph = offset(index);
     // map top left pixel of bitmap to pixel (x,y) coordinates 
@@ -68,12 +68,12 @@ void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg, bool
             if ((glyph[py]) & mask[px]) {
                 color = fg;
             }
-            plot(px + x, py + y, color, write_to_buffer);
+            plot(px + x, py + y, color, double_buffer);
         }
     }
 }
 
-void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, bool write_to_buffer) {
+void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, uint8_t *double_buffer ) {
     // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
     unsigned char *glyph = offset(index);
     // map top left pixel of bitmap to pixel (x,y) coordinates 
@@ -84,30 +84,30 @@ void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, bool write_to_
     for(uint32_t py = 0; py < char_height; py++) {
         for(uint32_t px = 0; px < char_width; px++) {
             if ((glyph[py]) & mask[px]) {
-                plot(px + x, py + y, fg, write_to_buffer);
+                plot(px + x, py + y, fg, double_buffer);
             }
         }
     }
 }
 
 
-void put_char(uint16_t index, uint32_t cx, uint32_t cy, bool write_to_buffer) {
-    put_char(index, cx, cy, White, Black, write_to_buffer);
+void put_char(uint16_t index, uint32_t cx, uint32_t cy, uint8_t *double_buffer) {
+    put_char(index, cx, cy, White, Black, double_buffer);
 }
 
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg) {
-    put_char(index, cx, cy, fg, bg, false);
+    put_char(index, cx, cy, fg, bg, nullptr);
 }
 
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg) {
-    put_char(index, cx, cy, fg, false);
+    put_char(index, cx, cy, fg, nullptr);
 }
 
 void put_char(uint16_t index, uint32_t cx, uint32_t cy) {
-    put_char(index, cx, cy, White, Black, false);
+    put_char(index, cx, cy, White, Black, nullptr);
 }
 
-void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg) {
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg, uint8_t *double_buffer) {
     uint32_t cx_offset = cx;
     while(*str != 0) {
         if (*str == '\n') {
@@ -115,12 +115,12 @@ void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg) {
             cx_offset = cx;
             str++;
         } else {
-            put_char(*str++, cx_offset++, cy, fg, bg);
+            put_char(*str++, cx_offset++, cy, fg, bg, double_buffer);
         }
     }
 }
 
-void put_string(const char* str, uint32_t cx, uint32_t cy) {
+void put_string(const char* str, uint32_t cx, uint32_t cy, uint8_t *double_buffer) {
     uint32_t cx_offset = cx;
     while(*str != 0) {
         if (*str == '\n') {
@@ -133,7 +133,16 @@ void put_string(const char* str, uint32_t cx, uint32_t cy) {
     }
 }
 
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg) {
+    put_string(str, cx, cy, fg, bg, nullptr);
+}
+
+void put_string(const char* str, uint32_t cx, uint32_t cy) {
+    put_string(str, cx, cy, nullptr);
+}
+
 void ex() {
+    put_string("What just happened?\nWhy am I here?", 0, 0);
     put_char('H', 14, 4, Green, Black);
     put_char('E', 15, 4, Red, Black);
     put_char('L', 16, 4, Blue, Black);
@@ -145,7 +154,6 @@ void ex() {
     put_char('R', 22, 4, LightGreen);
     put_char('L', 23, 4, LightRed);
     put_char('D', 24, 4, LightCyan);
-    const char* s = new char[12];
-    s = "hello world";
-    put_string(s , 14, 5);
+    put_string("hello world" , 14, 5);
+    put_string("enabling interrupts, I'm scared", 0, 15);
 }

@@ -3,6 +3,9 @@
 
 #include "shared.h"
 #include "ext2.h"
+#include "graphics.h"
+#include "fonts.h"
+#include "keyboard.h"
 
 void kernelMain(void);
 

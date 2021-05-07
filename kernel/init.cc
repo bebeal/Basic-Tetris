@@ -44,7 +44,6 @@ static constexpr uint32_t VMM_FRAMES = HEAP_START + HEAP_SIZE;
 extern "C" void kernelInit(void) {
 
     U8250 uart;
-    //PS2Controller kb;
 
     if (!smpInitDone) {
         Debug::init(&uart);
@@ -119,18 +118,17 @@ extern "C" void kernelInit(void) {
         /* initialize LAPIC */
         SMP::init(true);
         smpInitDone = true;
-       
-        Keyboard::init(new PS2Controller());
   
+        Keyboard::init(new PS2Controller());
+
         /* initialize IDT */
         IDT::init();
         Pit::calibrate(1000);
 
         SMP::running.fetch_add(1);
-        clear_screen();
+        //clear_screen(); done automatically
         psf_init();
-        put_string("What just happened?\nWhy am I here?" , 0, 0);
-
+        //ex();
         // The reset EIP has to be
         //     - divisible by 4K (required by LAPIC)
         //     - PPN must fit in 8 bits (required by LAPIC)
@@ -161,12 +159,7 @@ extern "C" void kernelInit(void) {
 
     Debug::printf("| %d enabling interrupts, I'm scared\n",id);
     sti();
-    openIRQ(1);
-    if (SMP::me() == 0) {
-        //psf_init();
-        ex();
-    }
-
+    openIRQ(1); // keyboard now listening
     auto myOrder = howManyAreHere.add_fetch(1);
     if (myOrder == kConfig.totalProcs) {
         thread([] {

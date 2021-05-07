@@ -28,9 +28,14 @@ extern char _binary_Uni1_VGA16_psf_end;
 extern char _binary_Uni1_VGA16_psf_size;
  
 void psf_init();
+
+// yikes
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg);
 void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg);
 void put_char(uint16_t index, uint32_t cx, uint32_t cy);
+
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg, uint8_t *double_buffer);
+void put_string(const char* str, uint32_t cx, uint32_t cy, uint8_t *double_buffer);
 void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg);
 void put_string(const char* str, uint32_t cx, uint32_t cy);
 unsigned char* offset(uint16_t index);

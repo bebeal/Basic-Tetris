@@ -12,6 +12,8 @@
 #include "graphics.h"
 #include "tetris.h"
 #include "pit.h"
+#include "fonts.h"
+#include "tetris.h"
 
 const char* initName = "/sbin/init";
 
@@ -22,39 +24,11 @@ namespace bebeal {
 }
 
 void kernelMain(void) {
-    // emulates a keyboard interrupt
     Debug::printf("Made it to kernel main!\n");
+    Tetris game = Tetris();
+    game.play_game();
 
-    // IShape i = IShape(25, 25, (Color) 11);
-    // sleep(1);
-    // i.move_down();
-    // sleep(1);
-    // i.move_down();
-    // sleep(1);
-    // i.move_right();
-    // sleep(1);
-    // i.move_right();
-    // sleep(1);
-    // i.move_left();
-    // sleep(1);
-    // i.move_left();
-    // sleep(1);
-    // i.rotate();
-    // sleep(1);
-    // i.move_down();
-    // sleep(1);
-    // i.move_right();
-    // sleep(1);
-    // i.move_left();
-    // sleep(1);
-    // i.rotate();
-    // sleep(1);
-    // i.move_down();
-    // sleep(1);
-    // i.move_right();
-    // sleep(1);
-    // i.move_left();
-    // sleep(1);
+
     while(true);
 }
 

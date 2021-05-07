@@ -1,0 +1,187 @@
+SeaBIOS (version 1.13.0-1ubuntu1.1)
+BUILD: gcc: (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0 binutils: (GNU Binutils for Ubuntu) 2.34
+No Xen hypervisor found.
+Running on QEMU (i440fx)
+RamSize: 0x08000000 [cmos]
+Relocating init from 0x000d7d80 to 0x07facc20 (size 78656)
+Found QEMU fw_cfg
+QEMU fw_cfg DMA interface supported
+RamBlock: addr 0x0000000000000000 len 0x0000000008000000 [e820]
+Moving pm_base to 0x600
+=== PCI bus & bridge init ===
+PCI: pci_bios_init_bus_rec bus = 0x0
+=== PCI device probing ===
+Found 6 PCI devices (max PCI bus is 00)
+=== PCI new allocation pass #1 ===
+PCI: check devices
+=== PCI new allocation pass #2 ===
+PCI: IO: c000 - c04f
+PCI: 32: 0000000080000000 - 00000000fec00000
+PCI: map device bdf=00:03.0  bar 1, addr 0000c000, size 00000040 [io]
+PCI: map device bdf=00:01.1  bar 4, addr 0000c040, size 00000010 [io]
+PCI: map device bdf=00:03.0  bar 6, addr feb00000, size 00080000 [mem]
+PCI: map device bdf=00:03.0  bar 0, addr feb80000, size 00020000 [mem]
+PCI: map device bdf=00:02.0  bar 6, addr feba0000, size 00010000 [mem]
+PCI: map device bdf=00:02.0  bar 2, addr febb0000, size 00001000 [mem]
+PCI: map device bdf=00:02.0  bar 0, addr fd000000, size 01000000 [prefmem]
+PCI: init bdf=00:00.0 id=8086:1237
+PCI: init bdf=00:01.0 id=8086:7000
+PIIX3/PIIX4 init: elcr=00 0c
+PCI: init bdf=00:01.1 id=8086:7010
+PCI: init bdf=00:01.3 id=8086:7113
+Using pmtimer, ioport 0x608
+PCI: init bdf=00:02.0 id=1234:1111
+PCI: init bdf=00:03.0 id=8086:100e
+PCI: Using 00:02.0 for primary VGA
+handle_smp: apic_id=0x3
+handle_smp: apic_id=0x2
+handle_smp: apic_id=0x1
+Found 4 cpu(s) max supported 4 cpu(s)
+Copying PIR from 0x07fbfc00 to 0x000f5d80
+Copying MPTABLE from 0x00006e40/7fa3b60 to 0x000f5c60
+Copying SMBIOS entry point from 0x00006e40 to 0x000f59e0
+Scan for VGA option rom
+Running option rom at c000:0003
+Start SeaVGABIOS (version 1.13.0-1ubuntu1.1)
+VGABUILD: gcc: (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0 binutils: (GNU Binutils for Ubuntu) 2.34
+enter vga_post:
+   a=00000010  b=0000ffff  c=00000000  d=0000ffff ds=0000 es=f000 ss=0000
+  si=00000000 di=00006160 bp=00000000 sp=00006da2 cs=f000 ip=d002  f=0000
+VBE DISPI: bdf 00:02.0, bar 0
+VBE DISPI: lfb_addr=fd000000, size 16 MB
+Attempting to allocate 512 bytes lowmem via pmm call to f000:d0c5
+pmm call arg1=0
+VGA stack allocated at ea600
+Turning on vga text mode console
+set VGA mode 3
+SeaBIOS (version 1.13.0-1ubuntu1.1)
+Searching bootorder for: /pci@i0cf8/isa@1/fdc@03f0/floppy@0
+ATA controller 1 at 1f0/3f4/0 (irq 14 dev 9)
+ATA controller 2 at 170/374/0 (irq 15 dev 9)
+Found 1 lpt ports
+Found 1 serial ports
+PS2 keyboard initialized
+ata0-0: QEMU HARDDISK ATA-7 Hard-Disk (0 MiBytes)
+Searching bootorder for: /pci@i0cf8/*@1,1/drive@0/disk@0
+Searching bios-geometry for: /pci@i0cf8/*@1,1/drive@0/disk@0
+ata0-1: QEMU HARDDISK ATA-7 Hard-Disk (10 MiBytes)
+Searching bootorder for: /pci@i0cf8/*@1,1/drive@0/disk@1
+Searching bios-geometry for: /pci@i0cf8/*@1,1/drive@0/disk@1
+DVD/CD [ata1-0: QEMU DVD-ROM ATAPI-4 DVD/CD]
+Searching bootorder for: /pci@i0cf8/*@1,1/drive@1/disk@0
+Searching bios-geometry for: /pci@i0cf8/*@1,1/drive@1/disk@0
+Device reports MEDIUM NOT PRESENT
+All threads complete.
+Scan for option roms
+Running option rom at ca00:0003
+pmm call arg1=1
+pmm call arg1=0
+pmm call arg1=1
+pmm call arg1=0
+Searching bootorder for: /pci@i0cf8/*@3
+Searching bootorder for: /rom@genroms/kvmvapic.bin
+Searching bootorder for: HALT
+drive 0x000f5920: PCHS=2/16/63 translation=none LCHS=2/16/63 s=206
+drive 0x000f58f0: PCHS=20/16/63 translation=none LCHS=20/16/63 s=20480
+Running option rom at cb00:0003
+Space available for UMB: cd800-e9800, f5600-f5890
+Returned 131072 bytes of ZoneHigh
+e820 map has 6 items:
+  0: 0000000000000000 - 000000000009fc00 = 1 RAM
+  1: 000000000009fc00 - 00000000000a0000 = 2 RESERVED
+  2: 00000000000f0000 - 0000000000100000 = 2 RESERVED
+  3: 0000000000100000 - 0000000007fe0000 = 1 RAM
+  4: 0000000007fe0000 - 0000000008000000 = 2 RESERVED
+  5: 00000000fffc0000 - 0000000100000000 = 2 RESERVED
+enter handle_19:
+  NULL
+Booting from Hard Disk...
+Booting from 0000:7c00
+set VGA mode 13
+om at cb00:0003
+Space available for UMB: cd800-e9800, f5600-f5890
+Returned 131072 bytes of ZoneHigh
+e820 map has 6 items:
+  0: 0000000000000000 - 000000000009fc00 = 1 RAM
+  1: 000000000009fc00 - 00000000000a0000 = 2 RESERVED
+  2: 00000000000f0000 - 0000000000100000 = 2 RESERVED
+  3: 0000000000100000 - 0000000007fe0000 = 1 RAM
+  4: 0000000007fe0000 - 0000000008000000 = 2 RESERVED
+  5: 00000000fffc0000 - 0000000100000000 = 2 RESERVED
+enter handle_19:
+  NULL
+Booting from Hard Disk...
+Booting from 0000:7c00
+set VGA mode 13
+
+t: 179
+VBE mode info request: 17a
+VBE mode info request: 17b
+VBE mode info request: 17c
+VBE mode info request: 17d
+VBE mode info request: 17e
+VBE mode info request: 17f
+VBE mode info request: 180
+VBE mode info request: 181
+VBE mode info request: 182
+VBE mode info request: 183
+VBE mode info request: 184
+VBE mode info request: 185
+VBE mode info request: 186
+VBE mode info request: 187
+VBE mode info request: 188
+VBE mode info request: 189
+VBE mode info request: 18a
+VBE mode info request: 18b
+VBE mode info request: 18c
+VBE mode info request: 18d
+VBE mode info request: 18e
+VBE mode info request: 18f
+VBE mode info request: 190
+VBE mode info request: 191
+VBE mode info request: 192
+VBE mode info request: 193
+VBE mode info request: 194
+VBE mode info request: 195
+VBE mode info request: 196
+VBE mode info request: 197
+VBE mode info request: 198
+VBE mode info request: 0
+VBE mode info request: 1
+VBE mode info request: 2
+VBE mode info request: 3
+VBE mode info request: 4
+VBE mode info request: 5
+VBE mode info request: 6
+VBE mode info request: 7
+VBE mode info request: d
+VBE mode info request: e
+VBE mode info request: f
+VBE mode info request: 10
+VBE mode info request: 11
+VBE mode info request: 12
+VBE mode info request: 13
+VBE mode info request: 6a
+Unable to find vesa video mode dimensions 320/240
+failed to find a videomode with 320x240 0bpp (0=any).
+Searching bootorder for: HALT
+drive 0x000f5920: PCHS=2/16/63 translation=none LCHS=2/16/63 s=162
+drive 0x000f58f0: PCHS=20/16/63 translation=none LCHS=20/16/63 s=20480
+Running option rom at cb00:0003
+Space available for UMB: cd800-e9800, f5600-f5890
+Returned 131072 bytes of ZoneHigh
+e820 map has 6 items:
+  0: 0000000000000000 - 000000000009fc00 = 1 RAM
+  1: 000000000009fc00 - 00000000000a0000 = 2 RESERVED
+  2: 00000000000f0000 - 0000000000100000 = 2 RESERVED
+  3: 0000000000100000 - 0000000007fe0000 = 1 RAM
+  4: 0000000007fe0000 - 0000000008000000 = 2 RESERVED
+  5: 00000000fffc0000 - 0000000100000000 = 2 RESERVED
+enter handle_19:
+  NULL
+Booting from Hard Disk...
+Booting from 0000:7c00
+
+... .start
+
+set VGA mode 13

@@ -5,213 +5,286 @@
 #include "graphics.h"
 #include "stdint.h"
 #include "pit.h"
+#include "shapes.h"
+#include "random.h"
+#include "keyboard.h"
 
-/*
-Screen is 320 x 200
-Make the tetris "tank" 152 pixels tall
-make each sublock 4 x 4 pixels
+//#define DEBUG
+#ifdef DEBUG
+  #define D if(1)
+#else 
+  #define D if(0)
+#endif
 
-I shape: 4 sublocks in a row i.e.
-.
-.
-.
-.
+#define NONE 0
+#define LEFT 'q'
+#define DOWN 'w'
+#define RIGHT 'e'
+#define ROTATE ' '
 
-L shape:
-.
-.
-..
-
-Cube Shape:
-..
-..
-
-
-*/
-
-class Shape {
-   protected:
-    char type;            // 7 diff tetris shapes
-    uint8_t orientation;  // 0, 1, 2, 3
-    uint32_t num_blocks;
-    uint32_t x;
-    uint32_t y;
-    Color color;
-    bool draw_to_buffer;
-    static constexpr uint32_t BLOCK_SIZE = 4;
-    static constexpr uint32_t NUM_ORIENTATIONS = 4;
-
-   public:
-    Shape(char type, uint8_t orientation, uint32_t num_blocks, uint32_t x, uint32_t y, Color color) : type(type), orientation(orientation), num_blocks(num_blocks), x(x), y(x), color(color), draw_to_buffer(false) {}
-    Shape(char type, uint8_t orientation, uint32_t num_blocks, uint32_t x, uint32_t y) : Shape(type, orientation, num_blocks, x, y, (Color) (Pit::jiffies % NUM_COLORS)) {}
-
-    virtual void move_down() = 0;
-
-    virtual void move_right() = 0;
-
-    virtual void move_left() = 0;
-
-    virtual void rotate() = 0;
-
-    void draw_block(uint32_t x_start, uint32_t y_start) {
-        for (uint32_t line = 0; line < BLOCK_SIZE; line++) {
-            draw_line(x_start, y_start + line, x_start + 4, y_start + line, color, draw_to_buffer);
-        }
-    }
-
-    void clear_block(uint32_t x_start, uint32_t y_start) {
-        for (uint32_t line = 0; line < BLOCK_SIZE; line++) {
-            draw_line(x_start, y_start + line, x_start + 4, y_start + line, Black, draw_to_buffer);
-        }
-    }
-};
-
-// I
-class IShape : public Shape {
-   public:
-
-    IShape(uint32_t x, uint32_t y, Color color) : Shape('I', 0, 4, x, y, color) {
-        //Debug::printf("shape initialized at : %d, %d\n", x, y);
-        uint32_t y_start = y;
-        for (uint32_t block = 0; block < num_blocks; block++) {
-            draw_block(x, y_start);
-            y_start += BLOCK_SIZE;
-        }
-    }
-
-    /*
-     * Before: .  After: 
-     *         .         .
-     *         .         .
-     *         .         .
-     *                   .
-     */
-    void extend_bottom() {
-        clear_block(x, y);
-        draw_block(x, y + num_blocks * BLOCK_SIZE);
-        y += BLOCK_SIZE;
-    }
-
-    /*
-     * Before: ....
-     * After:   ....
-     */
-    void extend_right() {
-        clear_block(x, y);
-        draw_block(x + num_blocks * BLOCK_SIZE, y);
-        x += BLOCK_SIZE;
-    }
-
-    /*
-     * Before: ....
-     * After: ....
-     */
-    void extend_left() {
-        clear_block(x + BLOCK_SIZE * 3, y);
-        draw_block(x - BLOCK_SIZE, y);
-        x -= BLOCK_SIZE;
-    }
-
-    /*
-     * Before: .  After:   or Before: ....  After:
-     *         .         .                         ....
-     *         .         .
-     *         .         .
-     *                   .
-     */
-    void move_down() {
-        //Debug::printf("moving down current pos : %d, %d\n", x, y);
-        if (orientation == 0 || orientation == 2) {
-            extend_bottom();
-        } else {
-            for (uint32_t block = 0; block < num_blocks; block++) {
-                //Debug::printf("x, y, x + BLOCK_SIZE * num_blocks - 1, y: %d %d %d %d\n",x, y, x + BLOCK_SIZE * num_blocks - 1, y);
-                //Debug::printf("x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE: %d %d %d %d\n",x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks - 1, y + BLOCK_SIZE);
-                draw_line(x, y, x + BLOCK_SIZE * num_blocks, y, Black, draw_to_buffer);
-                draw_line(x, y + BLOCK_SIZE, x + BLOCK_SIZE * num_blocks, y + BLOCK_SIZE, color, draw_to_buffer);
-                y++;
-            }
-        }
-       // Debug::printf("new pos : %d, %d\n", x, y);
-    }
-
-    /*
-     * Before: .  After:  . or Before: ....  After:  ....
-     *         .          .                        
-     *         .          .
-     *         .          .
-     *                   
-     */
-    void move_right() {
-        //Debug::printf("moving right current pos : %d, %d\n", x, y);
-        if (orientation == 0 || orientation == 2) {
-            for (uint32_t block = 0; block < num_blocks; block++) {
-                draw_line(x, y, x, y + BLOCK_SIZE * num_blocks - 1, Black, draw_to_buffer);
-                draw_line(x + BLOCK_SIZE, y, x + BLOCK_SIZE, y + BLOCK_SIZE * num_blocks - 1, color, draw_to_buffer);
-                x++;
-            }
-        } else {
-            extend_right();
-        }
-        //Debug::printf("new pos : %d, %d\n", x, y);
-    }
-
-    /*
-     * Before: .  After:.  or Before: ....  After:....
-     *         .        .                        
-     *         .        .
-     *         .        .
-     *                   
-     */
-    void move_left() {
-        //Debug::printf("moving left current pos : %d, %d\n", x, y);
-        if (orientation == 0 || orientation == 2) {
-            x -= BLOCK_SIZE;
-            uint32_t start_x = x;
-            for (uint32_t block = 0; block < num_blocks; block++) {
-                draw_line(start_x, y, start_x, y + BLOCK_SIZE * num_blocks - 1, color, draw_to_buffer);
-                draw_line(start_x + BLOCK_SIZE, y, start_x + BLOCK_SIZE, y + BLOCK_SIZE * num_blocks - 1, Black, draw_to_buffer);
-                start_x++;
-            }
-        } else {
-            extend_left();
-        }
-       // Debug::printf("new pos : %d, %d\n", x, y);
-    }
-
-    void rotate() {
-       // Debug::printf("rotating current pos, orientation : %d, %d %d\n", x, y, orientation);
-        if (orientation == 0 || orientation == 2) {
-            for(uint32_t block = 0; block < num_blocks; block++) {
-                clear_block(x, y);
-                y += BLOCK_SIZE;
-            }
-            x += 2 * BLOCK_SIZE;
-            y -= 2 * BLOCK_SIZE;
-            for(uint32_t block = 0; block < num_blocks; block++) {
-                draw_block(x, y);
-                x -= BLOCK_SIZE;
-            }
-            x += BLOCK_SIZE;
-        } else {
-            for(uint32_t block = 0; block < num_blocks; block++) {
-                clear_block(x, y);
-                x += BLOCK_SIZE;
-            }
-            x -= 3 * BLOCK_SIZE;
-            y += BLOCK_SIZE;
-            for(uint32_t block = 0; block < num_blocks; block++) {
-                draw_block(x, y);
-                y -= BLOCK_SIZE;
-            }
-            y += BLOCK_SIZE;
-        }
-        orientation = (orientation + 1) % NUM_ORIENTATIONS;
-        //Debug::printf("after rotate current pos, orientation : %d, %d %d\n", x, y, orientation);
-    }
-};
+// A, S, D, R
 
 class Tetris {
+protected:
+    uint32_t con[4][2];
+    uint8_t* double_buffer;
+    Shape* curr_shape;
+    Random* rng;
+    static constexpr uint32_t GT = 1000; // game tick how long to wait before "dropping" the block, prob needs to be like 1000
+    uint32_t init_x = 240;
+    uint32_t init_y = 10;
+    //
+
+public:
+    Tetris() {
+        // top left, top right, bottom right, bottom left
+        // x, y
+        // TODO: change these to whatever is needed
+        con[0][0] = 179;
+        con[0][1] = 9;
+        con[1][0] = 300;
+        con[1][1] = 9;
+        con[2][0] = 300;
+        con[2][1] = 190;
+        con[3][0] = 179;
+        con[3][1] = 190;
+        double_buffer = new uint8_t[WIDTH * HEIGHT];
+        Keyboard::toggle_display(nullptr);
+        curr_shape = new IShape(init_x, init_y, (Color) 11);
+        //Debug::printf("1\n");
+        curr_shape->draw_shape(double_buffer);
+        //Debug::printf("2\n");
+        for(uint32_t px = con[0][0]; px > con[0][0] - 4; px--) {
+            draw_line(px, 10, px, 193, Red, nullptr);
+        }
+        for(uint32_t px = con[1][0]; px < con[1][0] + 4; px++) {
+            draw_line(px, 10, px, 193, Red, nullptr);
+        }
+        for(uint32_t py = con[3][1]; py < con[2][1] + 4; py++) {
+            draw_line(176, py, 303, py, Red, nullptr);
+        }
+        rng = new Random(0);
+        //Debug::printf("3\n");
+        //buffer_to_screen(double_buffer);
+        // uint8_t* dir = new uint8_t[4];
+        // dir[0] = LEFT;
+        // dir[1] = DOWN;
+        // dir[2] = RIGHT;
+        // dir[3] = ROTATE;
+        // for (uint8_t i = 0; i < 200; i++) {
+        //     //Debug::printf("%d\n", i);
+        //     move(dir[1]);
+        //     //buffer_to_screen(double_buffer);
+        //     sleep(1);
+        // }
+        // while(true) {
+        //     uint8_t control_input = get_control();
+        //     Debug::printf("control_input %d\n", control_input);
+        //     move(control_input);
+        //     sleep(1);
+        // }
+        //buffer_to
+    }
+
+    uint8_t get_control() {
+        return Keyboard::last_press();
+    }
+
+    void next_shape() {
+        delete curr_shape;
+        ShapeType shape_type = (ShapeType) (rng->next() % 7);
+        Color c = (Color) (Pit::jiffies % NUM_COLORS);
+        if (c == Black || c == Red) {
+            c = LightCyan;
+        }
+        switch(shape_type) {
+            case ShapeType::SQUARE:
+                curr_shape = new SquareShape(init_x, init_y, c);
+                break;
+            case ShapeType::I:
+                curr_shape = new IShape(init_x, init_y, c);
+                break;
+            case ShapeType::L:
+                curr_shape = new LShape(init_x, init_y, c);
+                break;
+            case ShapeType::REVERSE_L:
+                curr_shape = new ReverseLShape(init_x, init_y, c);
+                break;
+            case ShapeType::Z:
+                curr_shape = new ZShape(init_x, init_y, c);
+                break;
+            case ShapeType::REVERSE_Z:
+                curr_shape = new ReverseZShape(init_x, init_y, c);
+                break;
+            case ShapeType::T:
+                curr_shape = new TShape(init_x, init_y, c);
+                break;
+        }
+        // TODO: do we want to draw it here?
+        curr_shape->draw_shape(double_buffer);
+        //buffer_to_screen(double_buffer);
+    }
+
+    bool clear_left() {
+        uint32_t new_x = curr_shape->x - Shape::BLOCK_SIZE;
+        uint32_t y = curr_shape->y;
+        curr_shape->clear_shape(double_buffer);
+        for (uint32_t block_index = 0; block_index < curr_shape->num_blocks; block_index++) {
+            uint32_t block_num = curr_shape->on_blocks[curr_shape->orientation][block_index];
+            uint32_t x_cor = to_x(new_x, block_num);
+            uint32_t y_cor = to_y(y, block_num);
+
+            // only need to check x-coordinates for bounds
+            // and check if occupied
+            if (x_cor <= con[0][0] || double_buffer[offset(x_cor, y_cor)] != 0) {
+                curr_shape->draw_shape(double_buffer);
+                return false;
+            }
+        }
+        curr_shape->draw_shape(double_buffer);
+        return true;
+    }
+
+    bool clear_right() {
+        uint32_t new_x = curr_shape->x + Shape::BLOCK_SIZE;
+        uint32_t y = curr_shape->y;
+        // to help with checking if spaces are free
+        curr_shape->clear_shape(double_buffer);
+        for (uint32_t block_index = 0; block_index < curr_shape->num_blocks; block_index++) {
+            uint32_t block_num = curr_shape->on_blocks[curr_shape->orientation][block_index];
+            uint32_t x_cor = to_x(new_x, block_num);
+            uint32_t y_cor = to_y(y, block_num);
+
+            // only need to check x-coordinates
+            // now check if occupied
+            if (x_cor >= con[1][0]|| double_buffer[offset(x_cor, y_cor)] != 0) {
+                curr_shape->draw_shape(double_buffer);
+                return false;
+            }
+        }
+        curr_shape->draw_shape(double_buffer);
+        return true;
+    }
+
+    bool clear_down() {
+        //Debug::printf("in clear_down\n");
+        uint32_t x = curr_shape->x;
+        uint32_t new_y = curr_shape->y + Shape::BLOCK_SIZE;
+        // to help with checking if spaces are free
+        curr_shape->clear_shape(double_buffer);
+        for (uint32_t block_index = 0; block_index < curr_shape->num_blocks; block_index++) {
+            uint32_t block_num = curr_shape->on_blocks[curr_shape->orientation][block_index];
+            uint32_t x_cor = to_x(x, block_num);
+            uint32_t y_cor = to_y(new_y, block_num);
+            //Debug::printf("x_cor = %d\n", x_cor);
+            //Debug::printf("y_cor = %d\n", y_cor);
+
+            // only need to check y-coordinates
+            //Debug::printf("got past bounds check, block_index = %d\n", block_index);
+            // now check if occupied
+            // but don't check the spaces where I previously was - hacky but trying to get it to work
+            //curr_shape->clear_shape(double_buffer);
+            if (y_cor >= con[2][1] || double_buffer[offset(x_cor, y_cor)] != Black) {
+                curr_shape->draw_shape(double_buffer);
+                return false;
+            }
+            //Debug::printf("got past occupied check, block_index = %d\n", block_index);
+        }
+        curr_shape->draw_shape(double_buffer);
+        return true;
+    }
+
+    bool clear_rotate() {
+        uint32_t x = curr_shape->x;
+        uint32_t y = curr_shape->y;
+        // rotate once to get new orientation
+        curr_shape->rotate_templ();
+        curr_shape->clear_shape(double_buffer);
+        uint32_t index = 0;
+        bool out_bounds = false;
+        while (!out_bounds && index < curr_shape->num_blocks) {
+            uint32_t new_x = to_x(x, curr_shape->on_blocks[curr_shape->orientation][index]);
+            uint32_t new_y = to_y(y, curr_shape->on_blocks[curr_shape->orientation][index]);
+            if (new_x <= con[0][0] || con[1][0] <= new_x) {
+                out_bounds = true;
+            }
+            if (new_y <= con[0][1] || con[2][1] <= new_y) {
+                out_bounds = true;
+            }
+            index++;
+        }
+
+        // rotate 3 more times to go back
+        for (int i = 0; i < 3; i++) {
+            curr_shape->rotate_templ();
+        }
+        curr_shape->draw_shape(double_buffer);
+        return out_bounds;
+    }
+
+    // returns true if the row is complete and can 
+    bool row_complete(uint32_t y) {
+
+    }
+
+    // collision check, if valid, move shape
+    bool move(uint8_t move) {
+        if (move == 0) { // keyboard input wasn't a valid move (i.e. they pressed like 9 or 'H' or something random)
+            return false;
+        }
+        bool update_screen = false;
+        switch(move) {
+            case LEFT: 
+                if (true) {
+                    //Debug::printf("kdfjsfjs\n");
+                    curr_shape->move_left(double_buffer);
+                    update_screen = true;
+                }
+                break;
+            case DOWN:
+                if (clear_down()) {
+                    curr_shape->move_down(double_buffer);
+                    update_screen = true;
+                }
+                break;
+            case RIGHT:
+                if (true) {
+                    curr_shape->move_right(double_buffer);
+                    update_screen = true;
+                }
+                break;
+            case ROTATE:
+                if (clear_rotate()) {
+                    curr_shape->rotate(double_buffer);
+                    update_screen = true;
+                }
+                break;
+        }
+        if (update_screen) {
+            //buffer_to_screen(double_buffer);
+            // check if any rows filled
+        }
+        return update_screen;
+    }
+
+    void play_game() {
+        // between every GT number of jiffies, we'll force a call to move_down() on the shape
+        volatile uint32_t time_drop = Pit::jiffies + GT;
+        while(true) {
+            //sleep(1);
+            if (Pit::jiffies >= time_drop) {
+                bool moved_down = move(DOWN);
+                if (!moved_down) {
+                    next_shape();
+                }
+                
+                time_drop = Pit::jiffies + GT;
+            }
+            uint8_t control_input = get_control();
+            //Debug::printf("control_input %d\n", control_input);
+            move(control_input);
+        }
+    }
 };
 
 #endif
