@@ -63,35 +63,7 @@ public:
         for(uint32_t py = con[3][1]; py < con[2][1] + 4; py++) {
             draw_line(176, py, 303, py, Red, nullptr);
         }
-
-        // Shape* show = new IShape(2, 170, (Color) 11);
-        // show->draw_shape(double_buffer);
-        // show = new ZShape(9, 160, (Color) 13);
-        // show->draw_shape(double_buffer);
-        // show = new LShape(16, 150, (Color) 2);
-        // show->draw_shape(double_buffer);
-
         rng = new Random(0);
-        //Debug::printf("3\n");
-        //buffer_to_screen(double_buffer);
-        // uint8_t* dir = new uint8_t[4];
-        // dir[0] = LEFT;
-        // dir[1] = DOWN;
-        // dir[2] = RIGHT;
-        // dir[3] = ROTATE;
-        // for (uint8_t i = 0; i < 200; i++) {
-        //     //Debug::printf("%d\n", i);
-        //     move(dir[1]);
-        //     //buffer_to_screen(double_buffer);
-        //     sleep(1);
-        // }
-        // while(true) {
-        //     uint8_t control_input = get_control();
-        //     Debug::printf("control_input %d\n", control_input);
-        //     move(control_input);
-        //     sleep(1);
-        // }
-        //buffer_to
     }
 
     uint8_t get_control() {
@@ -175,7 +147,6 @@ public:
     }
 
     bool clear_down() {
-        //Debug::printf("in clear_down\n");
         uint32_t x = curr_shape->x;
         uint32_t new_y = curr_shape->y + Shape::BLOCK_SIZE;
         // to help with checking if spaces are free
@@ -184,19 +155,13 @@ public:
             uint32_t block_num = curr_shape->on_blocks[curr_shape->orientation][block_index];
             uint32_t x_cor = to_x(x, block_num);
             uint32_t y_cor = to_y(new_y, block_num);
-            //Debug::printf("x_cor = %d\n", x_cor);
-            //Debug::printf("y_cor = %d\n", y_cor);
-
             // only need to check y-coordinates
-            //Debug::printf("got past bounds check, block_index = %d\n", block_index);
             // now check if occupied
             // but don't check the spaces where I previously was - hacky but trying to get it to work
-            //curr_shape->clear_shape(double_buffer);
             if (y_cor >= con[2][1] || double_buffer[offset(x_cor, y_cor)] != Black) {
                 curr_shape->draw_shape(double_buffer);
                 return false;
             }
-            //Debug::printf("got past occupied check, block_index = %d\n", block_index);
         }
         curr_shape->draw_shape(double_buffer);
         return true;
@@ -284,10 +249,6 @@ public:
                 }
                 break;
         }
-        //if (update_screen) {
-            //buffer_to_screen(double_buffer);
-            // check if any rows filled
-        //}
         return update_screen;
     }
 
@@ -295,7 +256,6 @@ public:
         // between every GT number of jiffies, we'll force a call to move_down() on the shape
         volatile uint32_t time_drop = Pit::jiffies + GT;
         while(true) {
-            //sleep(1);
             if (Pit::jiffies >= time_drop) {
                 bool moved_down = move(DOWN);
                 if (!moved_down) {
@@ -305,7 +265,6 @@ public:
                 time_drop = Pit::jiffies + GT;
             }
             uint8_t control_input = get_control();
-            //Debug::printf("control_input %d\n", control_input);
             move(control_input);
         }
     }
