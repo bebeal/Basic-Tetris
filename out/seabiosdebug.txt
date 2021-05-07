@@ -81,7 +81,7 @@ pmm call arg1=0
 Searching bootorder for: /pci@i0cf8/*@3
 Searching bootorder for: /rom@genroms/kvmvapic.bin
 Searching bootorder for: HALT
-drive 0x000f5920: PCHS=2/16/63 translation=none LCHS=2/16/63 s=206
+drive 0x000f5920: PCHS=2/16/63 translation=none LCHS=2/16/63 s=205
 drive 0x000f58f0: PCHS=20/16/63 translation=none LCHS=20/16/63 s=20480
 Running option rom at cb00:0003
 Space available for UMB: cd800-e9800, f5600-f5890

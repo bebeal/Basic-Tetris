@@ -1,4 +1,4 @@
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 | What just happened? Why am I here?
 | Discovering my identity and features
 |     CPUID: AuthenticAMD
@@ -15,8 +15,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 | Initializing PS2Controller PS/2 Port device/s
 | pitInit freq 1000Hz
 | pitInit divider 59659
-| APIT running at 1000074518Hz
-| APIT counter=1000074 for 1000Hz
+| APIT running at 1000069952Hz
+| APIT counter=1000069 for 1000Hz
 Initializing font bitmap
 Number of Glyphs: 512
 Number of bytes per glyph: 16
@@ -26,15 +26,15 @@ Number of bytes per glyph: 16
 | initialize 2
 | reset 2
 |      eip:0x8000
+| initializing TSS:ss0 for 1
+| initializing TSS:ss0 for 2
 | initialize 3
 | reset 3
 |      eip:0x8000
-| initializing TSS:ss0 for 1
-| initializing TSS:ss0 for 2
-| 2 enabling interrupts, I'm scared
 | 1 enabling interrupts, I'm scared
-| initializing TSS:ss0 for 0
-| 0 enabling interrupts, I'm scared
+| 2 enabling interrupts, I'm scared
 | initializing TSS:ss0 for 3
 | 3 enabling interrupts, I'm scared
+| initializing TSS:ss0 for 0
+| 0 enabling interrupts, I'm scared
 Made it to kernel main!

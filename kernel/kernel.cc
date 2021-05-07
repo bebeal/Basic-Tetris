@@ -28,7 +28,7 @@ void kernelMain(void) {
     Tetris game = Tetris();
     game.play_game();
 
-
+    //Keyboard::toggle_display(nullptr);
     while(true);
 }
 

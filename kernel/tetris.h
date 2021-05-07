@@ -63,6 +63,14 @@ public:
         for(uint32_t py = con[3][1]; py < con[2][1] + 4; py++) {
             draw_line(176, py, 303, py, Red, nullptr);
         }
+
+        // Shape* show = new IShape(2, 170, (Color) 11);
+        // show->draw_shape(double_buffer);
+        // show = new ZShape(9, 160, (Color) 13);
+        // show->draw_shape(double_buffer);
+        // show = new LShape(16, 150, (Color) 2);
+        // show->draw_shape(double_buffer);
+
         rng = new Random(0);
         //Debug::printf("3\n");
         //buffer_to_screen(double_buffer);
@@ -223,9 +231,11 @@ public:
     }
 
     // returns true if the row is complete and can 
+    /*
     bool row_complete(uint32_t y) {
-
+        uint32_t begin_x = con[0][0] + 1;
     }
+    */
 
     // collision check, if valid, move shape
     bool move(uint8_t move) {
@@ -254,16 +264,16 @@ public:
                 }
                 break;
             case ROTATE:
-                if (clear_rotate()) {
+                if (true) {
                     curr_shape->rotate(double_buffer);
                     update_screen = true;
                 }
                 break;
         }
-        if (update_screen) {
+        //if (update_screen) {
             //buffer_to_screen(double_buffer);
             // check if any rows filled
-        }
+        //}
         return update_screen;
     }
 
