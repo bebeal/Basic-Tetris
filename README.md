@@ -507,3 +507,6 @@ void play_game() {
     }
 }
 ```
+### Outcome
+
+<img src="imgs/GAME.png" alt="game" width="640" height="400">
