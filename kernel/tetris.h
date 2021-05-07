@@ -234,6 +234,20 @@ public:
     /*
     bool row_complete(uint32_t y) {
         uint32_t begin_x = con[0][0] + 1;
+        uint32_t end_x = con[2][0];
+        for (uint32_t curr_x = begin_x; curr_x < end_x; curr_x++) {
+            if (double_buffer[offset(curr_x, y)] == Black) return false;
+        }
+        return true;
+    }
+
+    // moves the info from the row above into this row
+    void down_row(uint32_t y) {
+        uint32_t begin_x = con[0][0] + 1;
+        uint32_t end_x = con[2][0];
+        for (uint32_t curr_x = begin_x; curr_x < end_x; curr_x++) {
+            double_buffer[offset(curr_x, y)]) = double_buffer[offset(curr_x, y - 1)]);
+        }
     }
     */
 

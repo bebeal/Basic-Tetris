@@ -1,11 +1,6 @@
 # Basic-Tetris with a Minimal Kernel
 Playing tetris from a system call, implemented with a minimal kernel built in Dr. Gheiths CS:439 Operating Systems, modeled after a Linux Kernel with an i386 architectore.
 
-## Need to Implement
-* <del>Keyboard Inputs</del>
-* <del>Writing to VGA Memory<del>
-* Tetris
-
 ## Keyboard Inputs and Enabling Keyboard Interrupts
 ### PS/2 Controller and Devices
 The PS/2 Keyboard is a device that talks to a PS/2 controller (Intel 8042; AIP) using serial communication. The PS/2 Keyboard accepts commands and sends responses to those commands, and also sends scan codes indicating when a key was pressed or released to the PS/2 controller.
@@ -237,6 +232,9 @@ Config::writeIOApic(0x13, 0x00000000);
 Now any interrupts sent across the IRQ1 line (i.e. the line our PS/2 Controller is communicating across) will make the IOAPIC will raise an interrupt with interrupt vector 0x9 for the CPU to handle.
 
 ### Setting the IDT
+
+<img src="imgs/idt.png" alt="Ps2-kbc">
+
 The last step is to write a handler to process the keyboard interrupt and set the correct index in the IDT to point to this handler. Since we programmed the IOAPIC to raise 0x9 as the interrupt vector, this will be the value the CPU eventually ends up indexing the IDT with, so we will use that as the index into the IDT and then set a pointer to our handler like so.
 ```C++
 IDT::interrupt(0x9, (uint32_t)keyboardHandler_);
@@ -282,9 +280,9 @@ For standard VGA video modes the video memory will be at address `0xA0000` for E
 We wish to switch into VGA mode 13 which is a relatively easy-to-use mode as the screen is effectively mapped linearly to memory for this mode. (Conversely to mode 12)
 
 
-### Switching Video Modes
+#### Switching Video Modes
 To switch video modes we will use a BIOS interrupt (`int 0x10`) with 0 in the `%ah` regiser and with the desired video mode number in the `%al` register. 
-#### Bootloader Code
+##### Bootloader Code
 We can only use BIOS Interrupts in a 16-bit environment which limits us to being in Real Mode or Virtual 8086 Mode. We opt for the former as the latter requires some other special conditions. Thus in the bootloader before we switch to protected mode we insert this code to enter into Video Mode 13 (320$\times$200$\times$256):
 
 ```assembly
@@ -402,22 +400,21 @@ Symbol table '.symtab' contains 5 entries:
 ##### Drawing a Char
 Now, drawing a char on the screen then simply becomes:
 ```C++
-void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
-    PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
+void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg, uint8_t *double_buffer) {
     // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
-    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;
+    unsigned char *glyph = offset(index);
     // map top left pixel of bitmap to pixel (x,y) coordinates 
-    uint32_t x = cx * 8;
-    uint32_t y = cy * font->height;
-    int mask[8]={1,2,4,8,16,32,64,128};
+    uint32_t x = cx * char_width;
+    uint32_t y = cy * char_height;
+    int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     // finally display pixels according to the bitmap 
-    for(uint32_t py = 0; py < font->height; py++) {
-        for(uint32_t px = 0; px < 8; px++) {
+    for(uint32_t py = 0; py < char_height; py++) {
+        for(uint32_t px = 0; px < char_width; px++) {
             Color color = bg;
             if ((glyph[py]) & mask[px]) {
                 color = fg;
             }
-            plot(px + x, py + y, color, false);
+            plot(px + x, py + y, color, double_buffer);
         }
     }
 }
@@ -426,24 +423,43 @@ void put_char(uint16_t index, int cx, int cy, Color fg, Color bg) {
 Instead of always writing a background color you can also use a variation of this function with a transparent background.
 
 ```C++
-void put_char(uint16_t index, int cx, int cy, Color fg) {
-    PSF_font *font = (PSF_font *)&_binary_Uni1_VGA16_psf_start;
+void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, uint8_t *double_buffer ) {
     // get the glyph for the index. If there's no glyph for a given index, we'll use the first glyph 
-    unsigned char *glyph = (unsigned char *)&_binary_Uni1_VGA16_psf_start + header_size + (index > 0 && index < num_glyphs ? index : 0) * bytes_per_glyph;
+    unsigned char *glyph = offset(index);
     // map top left pixel of bitmap to pixel (x,y) coordinates 
-    uint32_t x = cx * 8;
-    uint32_t y = cy * font->height;
-    int mask[8]={1,2,4,8,16,32,64,128};
+    uint32_t x = cx * char_width;
+    uint32_t y = cy * char_height;
+    int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     // finally display pixels according to the bitmap 
-    for(uint32_t py = 0; py < font->height; py++) {
-        for(uint32_t px = 0; px < 8; px++) {
+    for(uint32_t py = 0; py < char_height; py++) {
+        for(uint32_t px = 0; px < char_width; px++) {
             if ((glyph[py]) & mask[px]) {
-                plot(px + x, py + y, fg, false);
+                plot(px + x, py + y, fg, double_buffer);
             }
         }
     }
 }
 ```
+
+And a simplistic version of printing a string across the screen could be: Which could be expanded with a stored cursor to continously write from the top left of the screen to the bottm right.
+```C++
+void put_string(const char* str, uint32_t cx, uint32_t cy, Color fg, Color bg, uint8_t *double_buffer) {
+    uint32_t cx_offset = cx;
+    while(*str != 0) {
+        if (*str == '\n') {
+            cy++;
+            cx_offset = cx;
+            str++;
+        } else {
+            put_char(*str++, cx_offset++, cy, fg, bg, double_buffer);
+        }
+    }
+}
+```
+
+###### Outcome
+<img src="imgs/charToPixel.png" alt="screen" width="640" height="400">
+
 
 Sources and References:
 * https://wiki.osdev.org/Drawing_In_Protected_Mode
@@ -460,15 +476,34 @@ Each Tetromino (tetris piece) is made up of sub "blocks" that we are defining to
 
 <img src="imgs/tetromino.png" alt="tetromino" width="300" height="200">
 
-Thus the 'I' piece consist is 16 x 4 when placed vertically.
+Thus the 'I' piece consist is 16 $\times$ 4 when placed vertically. Or 4 $\times$ 16 when placed horizontally (and as it looks in the picture above)
 
 Every piece can be in one of four possible rotation orientations that can change depending on a key pressed by the player and the overall goal of the game is to survive as long as you can as the pieces fall down from the top of screen into a container and the only way to rid yourselves of them is to make a line of blocks stretching across the entire width of the container.
 
-For our game the pieces will move an entire block size per game tick, meaning it moves down automatically about 4 pixels every game tick. A game tick consists of X many PIT increments, which are counted via the cores on timer interrupts.
+For our game the pieces will move an entire block size per game tick, meaning it moves down automatically about 4 pixels every game tick. A game tick consists of 1000 many PIT increments, which roughly corresponds to one second. 
 
-The logic of moving the pieces is fairly simple each piece can either move left, down, or right, and each piece can rotate. which consists of you needing to write a minimum of 32 pixels and a maximum of ? pixels per move. The 32 pixels comes from if the 'I' piece were standing tall vertically and moved down a block's worth, you would need to "black out" the top most block (4$\times$4) and redraw one below the bottom most block (4$\times$4).
+The logic of moving the pieces is fairly simple each piece can either move left, down, or right, and each piece can rotate. 
 
 Our generic shape class stores the (x, y) coordinates of the upper left pixel for each shape (in 2 $\times$uint32_t), as well as the type of tetrimino (in a char), the orientation (uint8_t) and defines some other useful constants and virtual methods (`move_left`, `move_down`, `move_right`, `rotate()`) that each tetrimino shape must implement.
 
-
-### TLDR
+Then we just need to run a game loop that looks similar to this:
+```C++
+void play_game() {
+    // between every GT number of jiffies, we'll force a call to move_down() on the shape
+    volatile uint32_t time_drop = Pit::jiffies + GT;
+    while(true) {
+        if (Pit::jiffies >= time_drop) {
+            bool moved_down = move(DOWN);
+            if (!moved_down) {
+                // drop next shape if hits bottom
+                next_shape();
+            }
+            
+            time_drop = Pit::jiffies + GT;
+        }
+        // continously check the queue for keys input by the user, queue is filled via keyboard interrupts
+        uint8_t control_input = get_control();
+        move(control_input);
+    }
+}
+```

@@ -61,7 +61,7 @@ void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, Color bg, uint
     uint32_t x = cx * char_width;
     uint32_t y = cy * char_height;
     int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
-    // finally display pixels according to the bitmap */
+    // finally display pixels according to the bitmap 
     for(uint32_t py = 0; py < char_height; py++) {
         for(uint32_t px = 0; px < char_width; px++) {
             Color color = bg;
@@ -80,7 +80,7 @@ void put_char(uint16_t index, uint32_t cx, uint32_t cy, Color fg, uint8_t *doubl
     uint32_t x = cx * char_width;
     uint32_t y = cy * char_height;
     int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
-    // finally display pixels according to the bitmap */
+    // finally display pixels according to the bitmap 
     for(uint32_t py = 0; py < char_height; py++) {
         for(uint32_t px = 0; px < char_width; px++) {
             if ((glyph[py]) & mask[px]) {

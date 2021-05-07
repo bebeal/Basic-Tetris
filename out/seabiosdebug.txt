@@ -33,12 +33,12 @@ Using pmtimer, ioport 0x608
 PCI: init bdf=00:02.0 id=1234:1111
 PCI: init bdf=00:03.0 id=8086:100e
 PCI: Using 00:02.0 for primary VGA
-handle_smp: apic_id=0x3
 handle_smp: apic_id=0x2
 handle_smp: apic_id=0x1
+handle_smp: apic_id=0x3
 Found 4 cpu(s) max supported 4 cpu(s)
 Copying PIR from 0x07fbfc00 to 0x000f5d80
-Copying MPTABLE from 0x00006e40/7fa3b60 to 0x000f5c60
+Copying MPTABLE from 0x00006e40/7fa39c0 to 0x000f5c60
 Copying SMBIOS entry point from 0x00006e40 to 0x000f59e0
 Scan for VGA option rom
 Running option rom at c000:0003
@@ -80,6 +80,27 @@ pmm call arg1=1
 pmm call arg1=0
 Searching bootorder for: /pci@i0cf8/*@3
 Searching bootorder for: /rom@genroms/kvmvapic.bin
+
+Press ESC for boot menu.
+
+VBE mode info request: 100
+VBE mode info request: 101
+VBE mode info request: 102
+VBE mode info request: 103
+VBE mode info request: 104
+VBE mode info request: 105
+VBE mode info request: 106
+VBE mode info request: 107
+VBE mode info request: 10d
+VBE mode info request: 10e
+VBE mode info request: 10f
+VBE mode info request: 110
+VBE mode info request: 111
+VBE mode set: 4111
+set VGA mode 111
+Turning on vga text mode console
+set VGA mode 3
+SeaBIOS (version 1.13.0-1ubuntu1.1)
 Searching bootorder for: HALT
 drive 0x000f5920: PCHS=2/16/63 translation=none LCHS=2/16/63 s=205
 drive 0x000f58f0: PCHS=20/16/63 translation=none LCHS=20/16/63 s=20480
@@ -98,20 +119,7 @@ enter handle_19:
 Booting from Hard Disk...
 Booting from 0000:7c00
 set VGA mode 13
-om at cb00:0003
-Space available for UMB: cd800-e9800, f5600-f5890
-Returned 131072 bytes of ZoneHigh
-e820 map has 6 items:
-  0: 0000000000000000 - 000000000009fc00 = 1 RAM
-  1: 000000000009fc00 - 00000000000a0000 = 2 RESERVED
-  2: 00000000000f0000 - 0000000000100000 = 2 RESERVED
-  3: 0000000000100000 - 0000000007fe0000 = 1 RAM
-  4: 0000000007fe0000 - 0000000008000000 = 2 RESERVED
-  5: 00000000fffc0000 - 0000000100000000 = 2 RESERVED
-enter handle_19:
-  NULL
-Booting from Hard Disk...
-Booting from 0000:7c00
+ 0000:7c00
 set VGA mode 13
 
 t: 179
