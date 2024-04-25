@@ -1,5 +1,5 @@
 # Basic-Tetris with a Minimal Kernel
-Playing tetris from a system call, implemented with a minimal kernel built in Dr. Gheiths CS:439 Operating Systems, modeled after a Linux Kernel with an i386 architectore.
+Playing tetris from a system call, implemented with a minimal kernel, modeled after a Linux Kernel with an i386 architectore.
 
 ## Keyboard Inputs and Enabling Keyboard Interrupts
 ### PS/2 Controller and Devices
